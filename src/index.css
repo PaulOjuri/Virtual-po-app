@@ -1,13 +1,307 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset and base styles with Poppins font */
+* {
+  box-sizing: border-box;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+body {
+  margin: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f1f5f9;
+  font-weight: 400;
+  letter-spacing: 0.025em;
+}
+
+/* Typography improvements with Poppins */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+button {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+}
+
+/* Layout fixes */
+.flex { display: flex !important; }
+.flex-1 { flex: 1 1 0% !important; }
+.min-h-screen { min-height: 100vh !important; }
+.w-64 { width: 16rem !important; }
+.w-10 { width: 2.5rem !important; }
+.h-10 { height: 2.5rem !important; }
+.w-32 { width: 8rem !important; }
+.h-32 { height: 8rem !important; }
+.w-full { width: 100% !important; }
+.space-y-2 > * + * { margin-top: 0.5rem !important; }
+.space-y-3 > * + * { margin-top: 0.75rem !important; }
+.space-y-6 > * + * { margin-top: 1.5rem !important; }
+.space-x-3 > * + * { margin-left: 0.75rem !important; }
+.grid { display: grid !important; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+.gap-4 { gap: 1rem !important; }
+.gap-6 { gap: 1.5rem !important; }
+.overflow-y-auto { overflow-y: auto !important; }
+
+/* Colors - Background */
+.bg-slate-900 { background-color: #0f172a !important; }
+.bg-slate-800 { background-color: #1e293b !important; }
+.bg-slate-100 { background-color: #f1f5f9 !important; }
+.bg-slate-50 { background-color: #f8fafc !important; }
+.bg-blue-600 { background-color: #2563eb !important; }
+.bg-blue-400 { background-color: #60a5fa !important; }
+.bg-blue-100 { background-color: #dbeafe !important; }
+.bg-blue-700 { background-color: #1d4ed8 !important; }
+.bg-white { background-color: white !important; }
+.bg-red-50 { background-color: #fef2f2 !important; }
+.bg-orange-50 { background-color: #fff7ed !important; }
+.bg-blue-50 { background-color: #eff6ff !important; }
+.bg-gray-50 { background-color: #f9fafb !important; }
+.bg-green-600 { background-color: #059669 !important; }
+.bg-purple-600 { background-color: #7c3aed !important; }
+.bg-orange-600 { background-color: #ea580c !important; }
+
+/* Text colors */
+.text-white { color: white !important; }
+.text-blue-400 { color: #60a5fa !important; }
+.text-blue-600 { color: #2563eb !important; }
+.text-blue-700 { color: #1d4ed8 !important; }
+.text-green-600 { color: #059669 !important; }
+.text-purple-600 { color: #7c3aed !important; }
+.text-orange-600 { color: #ea580c !important; }
+.text-slate-900 { color: #0f172a !important; }
+.text-slate-600 { color: #475569 !important; }
+.text-slate-500 { color: #64748b !important; }
+.text-red-900 { color: #7f1d1d !important; }
+.text-orange-900 { color: #7c2d12 !important; }
+.text-blue-900 { color: #1e3a8a !important; }
+.text-gray-900 { color: #111827 !important; }
+
+/* FIXED SIDEBAR BUTTON STYLING - Better contrast for inactive buttons */
+.text-slate-300 { 
+  color: #1e293b !important; /* Dark text for contrast */
+  background-color: #f1f5f9 !important; /* Light background */
+  font-weight: 500 !important;
+}
+
+.text-slate-400 { 
+  color: #1e293b !important; /* Dark text for contrast */
+  background-color: #f1f5f9 !important; /* Light background */
+  font-weight: 500 !important;
+}
+
+/* Borders */
+.border { border-width: 1px !important; }
+.border-slate-200 { border-color: #e2e8f0 !important; }
+.border-red-200 { border-color: #fecaca !important; }
+.border-orange-200 { border-color: #fed7aa !important; }
+.border-blue-200 { border-color: #bfdbfe !important; }
+.border-gray-200 { border-color: #e5e7eb !important; }
+
+/* Rounded corners */
+.rounded { border-radius: 0.25rem !important; }
+.rounded-lg { border-radius: 0.5rem !important; }
+.rounded-xl { border-radius: 0.75rem !important; }
+.rounded-full { border-radius: 9999px !important; }
+
+/* Padding and margins */
+.p-3 { padding: 0.75rem !important; }
+.p-4 { padding: 1rem !important; }
+.p-6 { padding: 1.5rem !important; }
+.p-8 { padding: 2rem !important; }
+.px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+.px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+.py-1 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+.py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+.mb-2 { margin-bottom: 0.5rem !important; }
+.mb-3 { margin-bottom: 0.75rem !important; }
+.mb-4 { margin-bottom: 1rem !important; }
+.mb-8 { margin-bottom: 2rem !important; }
+.mt-1 { margin-top: 0.25rem !important; }
+.mt-8 { margin-top: 2rem !important; }
+
+/* Enhanced Typography with Poppins weights */
+.text-xl { 
+  font-size: 1.25rem !important; 
+  line-height: 1.75rem !important; 
+  font-weight: 600 !important;
+}
+
+.text-3xl { 
+  font-size: 1.875rem !important; 
+  line-height: 2.25rem !important; 
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.text-2xl { 
+  font-size: 1.5rem !important; 
+  line-height: 2rem !important; 
+  font-weight: 700 !important;
+}
+
+.text-lg { 
+  font-size: 1.125rem !important; 
+  line-height: 1.75rem !important; 
+  font-weight: 600 !important;
+}
+
+.text-sm { 
+  font-size: 0.875rem !important; 
+  line-height: 1.25rem !important; 
+  font-weight: 500 !important;
+}
+
+.text-xs { 
+  font-size: 0.75rem !important; 
+  line-height: 1rem !important; 
+  font-weight: 400 !important;
+}
+
+.font-bold { font-weight: 700 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-medium { font-weight: 500 !important; }
+
+/* Flexbox alignment */
+.items-center { align-items: center !important; }
+.items-start { align-items: flex-start !important; }
+.justify-between { justify-content: space-between !important; }
+
+/* Enhanced hover effects for sidebar */
+.hover\:bg-slate-800:hover { 
+  background-color: #e2e8f0 !important; /* Light gray hover for inactive buttons */
+  color: #1e293b !important; /* Keep dark text on hover */
+}
+
+.hover\:text-white:hover { 
+  color: #1e293b !important; /* Dark text instead of white */
+}
+
+.hover\:bg-slate-50:hover { 
+  background-color: #f8fafc !important; 
+}
+
+.hover\:text-blue-800:hover { 
+  color: #1e40af !important; 
+}
+
+/* Improved transitions */
+.transition-colors { 
+  transition-property: color, background-color, border-color !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 200ms !important;
+}
+
+/* Shadows */
+.shadow-sm { 
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+
+/* Responsive classes */
+@media (min-width: 768px) {
+  .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+}
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .lg\:col-span-2 { grid-column: span 2 / span 2 !important; }
+}
+
+/* ENHANCED SIDEBAR STYLING - PERFECT CONTRAST */
+.bg-slate-900 nav button {
+  color: #1e293b !important; /* Dark text */
+  background-color: #f1f5f9 !important; /* Light background */
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.025em !important;
+  border: 1px solid #e2e8f0 !important; /* Subtle border */
+}
+
+.bg-slate-900 nav button:hover {
+  background-color: #e2e8f0 !important; /* Slightly darker on hover */
+  color: #1e293b !important; /* Keep dark text */
+  font-weight: 600 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Active button stays blue with white text */
+.bg-slate-900 nav button.bg-blue-600 {
+  background-color: #2563eb !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-color: #2563eb !important;
+}
+
+.bg-slate-900 nav button.bg-blue-600:hover {
+  background-color: #1d4ed8 !important;
+  color: white !important;
+  border-color: #1d4ed8 !important;
+}
+
+/* Enhanced title styling */
+.bg-slate-900 h1 {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+}
+
+/* Card and content styling with Poppins */
+.bg-white h2, .bg-white h3, .bg-white h4 {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+}
+
+/* Button styling improvements */
+button {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.025em !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Additional utility classes */
+.cursor-pointer { cursor: pointer !important; }
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+.relative { position: relative !important; }
+.absolute { position: absolute !important; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0 !important; }
+
+/* Enhanced readability for all text elements */
+p, span, div {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 400 !important;
+}
+
+/* Make stats more prominent */
+.text-2xl.font-bold {
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
 }
