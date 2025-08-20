@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-   import { Users, User, Network, MessageSquare, BarChart3, AlertCircle, CheckCircle, Activity, Heart, Target, Brain, Calendar } from 'lucide-react';
+import React from 'react';
+   import { Users, User, Network, MessageSquare, BarChart3, Brain } from 'lucide-react';
 
    const StakeholderManager: React.FC = () => {
-     const [stakeholders, setStakeholders] = useState([
+     const stakeholders = [
        { id: 1, name: 'John Doe', role: 'Project Manager', influence: 5, interest: 4, sentiment: 'Positive', lastInteraction: '2025-08-17' },
        { id: 2, name: 'Jane Smith', role: 'Team Lead', influence: 3, interest: 5, sentiment: 'Neutral', lastInteraction: '2025-08-16' },
-     ]);
+     ];
 
      return (
        <div className="bg-white rounded-xl p-6 border border-slate-200">

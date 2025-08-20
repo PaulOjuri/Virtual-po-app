@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-   import { BarChart3, TrendingUp, TrendingDown, Brain, Zap, Clock, Mail, Calendar, Target, Activity, Network, MessageSquare, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import React from 'react';
+   import { BarChart3, Brain, Zap, Mail, Calendar, Target, Activity, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 
    const UnifiedDashboard: React.FC = () => {
-     // Example metrics
      const metrics = [
        { title: 'Productivity Score', value: '82%', change: 5, trend: 'up', icon: BarChart3 },
        { title: 'Tasks Completed', value: '24/30', change: 3, trend: 'up', icon: Target },
