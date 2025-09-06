@@ -1,122 +1,161 @@
 import React, { useState } from 'react';
-   import { Calendar, Mail, Users, CheckSquare, BarChart3, Settings, Target, Brain, FileText } from 'lucide-react';
-   import UnifiedDashboard from './UnifiedDashboard';
-   import EmailIntelligence from './EmailIntelligence';
-   import StakeholderManager from './StakeholderManager';
-   import PriorityManager from './PriorityManager';
-   import MeetingManager from './MeetingManager';
-   import DailyPlanning from './DailyPlanning';
-   import MarketIntelligence from './MarketIntelligence';
-   import KnowledgeBase from './KnowledgeBase';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Login } from './components/Login';
+import MarketIntelligence from './MarketIntelligence';
+import { Calendar, Mail, Users, CheckSquare, BarChart3, Settings as SettingsIcon, Target, Brain, FileText, TrendingUp, LogOut } from 'lucide-react';
+import UnifiedDashboard from './UnifiedDashboard';
+import EmailIntelligence from './EmailIntelligence';
+import StakeholderManager from './StakeholderManager';
+import PriorityManager from './PriorityManager';
+import MeetingManager from './MeetingManager';
+import DailyPlanning from './DailyPlanning';
+import KnowledgeBase from './KnowledgeBase';
+import Analytics from './Analytics';
+import Settings from './Settings';
+import Dashboard from './Dashboard';
 
-   const App: React.FC = () => {
-     const [activeTab, setActiveTab] = useState('dashboard');
-     const [user] = useState({ name: 'Product Owner', email: 'po@colruyt.be' });
+const renderContent = () => {
+  console.log('🔍 Rendering tab:', activeTab);
+  switch(activeTab) {
+    case 'dashboard':
+      return <Dashboard />;
+    case 'unified':
+      return <UnifiedDashboard />;
+    case 'priorities':
+      console.log('🎯 About to render PriorityManager');
+      return <PriorityManager />;
+    case 'emails':
+      return <EmailIntelligence />;
+    // ... rest of your cases
+    default:
+      return <Dashboard />;
+  }
+};
 
-     const navItems = [
-       { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-       { id: 'unified', label: 'AI Command Center', icon: Brain },
-       { id: 'priorities', label: 'Priorities', icon: Target },
-       { id: 'emails', label: 'Email Intelligence', icon: Mail },
-       { id: 'meetings', label: 'Meetings', icon: Calendar },
-       { id: 'stakeholders', label: 'Stakeholders', icon: Users },
-       { id: 'market', label: 'Market Intelligence', icon: BarChart3 },
-       { id: 'planning', label: 'Daily Planning', icon: CheckSquare },
-       { id: 'knowledge', label: 'Knowledge Base', icon: FileText },
-       { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-       { id: 'settings', label: 'Settings', icon: Settings },
-     ];
+const AppContent: React.FC = () => {
+  const { user, loading, signOut } = useAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
-     const Navigation: React.FC = () => {
-       return (
-         <div className="w-64 bg-slate-900 text-white p-6 min-h-screen overflow-y-auto">
-           <div className="mb-8">
-             <h1 className="text-xl font-bold text-blue-400">Virtual PO Assistant</h1>
-             <p className="text-sm text-slate-300 mt-1">Colruyt Group - Xtra App</p>
-           </div>
-           <nav className="space-y-2">
-             {navItems.map(item => {
-               const Icon = item.icon;
-               return (
-                 <button
-                   key={item.id}
-                   onClick={() => setActiveTab(item.id)}
-                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                     activeTab === item.id
-                       ? 'bg-blue-600 text-white'
-                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                   }`}
-                 >
-                   <Icon size={20} />
-                   <span className="text-sm">{item.label}</span>
-                 </button>
-               );
-             })}
-           </nav>
-           <div className="mt-8 p-4 bg-slate-800 rounded-lg">
-             <div className="flex items-center space-x-3">
-               <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                 <span className="text-sm font-medium">PO</span>
-               </div>
-               <div>
-                 <p className="text-sm font-medium">{user.name}</p>
-                 <p className="text-xs text-slate-400">{user.email}</p>
-               </div>
-             </div>
-           </div>
-         </div>
-       );
-     };
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'unified', label: 'AI Command Center', icon: Brain },
+    { id: 'priorities', label: 'Priorities', icon: Target },
+    { id: 'emails', label: 'Email Intelligence', icon: Mail },
+    { id: 'meetings', label: 'Meetings', icon: Calendar },
+    { id: 'stakeholders', label: 'Stakeholders', icon: Users },
+    { id: 'knowledge', label: 'Knowledge Base', icon: FileText },
+    { id: 'market', label: 'Market Intelligence', icon: TrendingUp },
+    { id: 'planning', label: 'Daily Planning', icon: CheckSquare },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon }
+  ];
 
-     const PlaceholderComponent: React.FC<{ title: string }> = ({ title }) => (
-       <div className="bg-white rounded-xl p-6 border border-slate-200 text-center">
-         <h3 className="text-lg font-semibold text-gray-900 mb-4">{title} coming soon 🚧</h3>
-         <p className="text-gray-600">This feature is under development and will be available soon.</p>
-       </div>
-     );
+  const renderContent = () => {
+    switch(activeTab) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'unified':
+        return <UnifiedDashboard />;
+      case 'priorities':
+        return <PriorityManager />;
+      case 'emails':
+        return <EmailIntelligence />;
+      case 'meetings':
+        return <MeetingManager />;
+      case 'stakeholders':
+        return <StakeholderManager />;
+      case 'knowledge':
+        return <KnowledgeBase />;
+      case 'market':
+        return <MarketIntelligence />;
+      case 'planning':
+        return <DailyPlanning />;
+      case 'analytics':
+        return <Analytics />;
+      case 'settings':
+        return <Settings />;
+      default:
+        return <Dashboard />;
+    }
+  };
 
-     const Dashboard: React.FC = () => (
-       <div className="bg-white rounded-xl p-6 border border-slate-200 text-center">
-         <h3 className="text-lg font-semibold text-gray-900 mb-4">Dashboard</h3>
-         <p className="text-gray-600">Main dashboard with key metrics and quick actions.</p>
-       </div>
-     );
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Loading...</span>
+      </div>
+    );
+  }
 
-     const renderContent = () => {
-       switch (activeTab) {
-         case 'dashboard':
-           return <Dashboard />;
-         case 'unified':
-           return <UnifiedDashboard />;
-         case 'priorities':
-           return <PriorityManager />;
-         case 'emails':
-           return <EmailIntelligence />;
-         case 'meetings':
-           return <MeetingManager />;
-         case 'stakeholders':
-           return <StakeholderManager />;
-         case 'market':
-           return <MarketIntelligence />;
-         case 'planning':
-           return <DailyPlanning />;
-         case 'knowledge':
-           return <KnowledgeBase />;
-         case 'analytics':
-           return <PlaceholderComponent title="Analytics & Reporting" />;
-         case 'settings':
-           return <PlaceholderComponent title="Settings" />;
-         default:
-           return <Dashboard />;
-       }
-     };
+  // Show login page if user is not authenticated
+  if (!user) {
+    return <Login />;
+  }
 
-     return (
-       <div className="flex min-h-screen bg-slate-100">
-         <Navigation />
-         <main className="flex-1 p-8">{renderContent()}</main>
-       </div>
-     );
-   };
+  // Show main app if user is authenticated
+  return (
+    <div className="app-container">
+      {/* Sidebar */}
+      <div className="sidebar">
+        {/* Profile Section */}
+        <div className="profile-section">
+          <div className="profile-info">
+            <div className="profile-name">Paulo Juri</div>
+            <div className="profile-role">Product Owner</div>
+            <div className="text-xs text-gray-500">{user.email}</div>
+          </div>
+        </div>
 
-   export default App;
+        {/* Navigation */}
+        <nav>
+          <ul className="nav-list">
+            {navItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <li key={item.id} className="nav-item">
+                  <button
+                    onClick={() => setActiveTab(item.id)}
+                    className={`nav-button ${activeTab === item.id ? 'active' : ''}`}
+                  >
+                    <Icon size={20} />
+                    <span>{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Sign Out Button */}
+        <div className="ai-toggle-container">
+          <button
+            onClick={signOut}
+            className="w-full flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <LogOut size={16} />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="main-content">
+        <div className="content-area">
+          {renderContent()}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+};
+
+export default App;
