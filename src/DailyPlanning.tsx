@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, CheckSquare, Clock, BarChart3, Plus, Brain, Filter } from 'lucide-react';
+import AIChat from './components/AIChat';
 
 interface Task {
   id: number;
@@ -284,6 +285,15 @@ const DailyPlanning: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* AI Chat Assistant */}
+      <AIChat 
+        currentContext="daily-planning"
+        contextData={{
+          tasks: tasks,
+          selectedDate: filterDate
+        }}
+      />
     </div>
   );
 };
