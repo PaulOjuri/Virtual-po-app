@@ -3,9 +3,10 @@ import { useAuth } from './contexts/AuthContext';
 import { TrendingUp, Users, Eye, Bell, BarChart3, Plus, Search, Filter, 
          Edit2, Trash2, Star, AlertTriangle, CheckCircle, X, Save, Brain,
          ExternalLink, Bookmark, BookmarkCheck, Target, Shield, Zap,
-         TrendingDown, Activity, Globe, Building, FileText, Calendar } from 'lucide-react';
+         TrendingDown, Activity, Globe, Building, FileText, Calendar, Download, Loader } from 'lucide-react';
 import { MarketIntelligenceService, MarketTrend, CompetitiveIntelligence, MarketNews, 
          MarketResearchReport, MarketAlert, MarketIntelligenceAnalytics } from './services/marketIntelligenceService';
+import { WebScrapingService } from './services/webScrapingService';
 
 const MarketIntelligence: React.FC = () => {
   const { user } = useAuth();
@@ -41,6 +42,13 @@ const MarketIntelligence: React.FC = () => {
   const [editingNews, setEditingNews] = useState<MarketNews | null>(null);
   const [editingReport, setEditingReport] = useState<MarketResearchReport | null>(null);
   const [editingAlert, setEditingAlert] = useState<MarketAlert | null>(null);
+
+  // Data scraping states
+  const [dataInstructions, setDataInstructions] = useState('');
+  const [scrapingQuery, setScrapingQuery] = useState('');
+  const [isScrapingData, setIsScrapingData] = useState(false);
+  const [scrapingResults, setScrapingResults] = useState<any[]>([]);
+  const [showDataScraper, setShowDataScraper] = useState(false);
 
   // AI Insights state
   const [aiInsights, setAIInsights] = useState<{
@@ -161,6 +169,95 @@ const MarketIntelligence: React.FC = () => {
       setError('Failed to generate AI insights');
     } finally {
       setLoadingAI(false);
+    }
+  };
+
+  // Data Scraping Operations
+  const handleDataScraping = async () => {
+    if (!scrapingQuery.trim()) {
+      setError('Please enter a search query');
+      return;
+    }
+
+    try {
+      setIsScrapingData(true);
+      setError(null);
+      
+      // Scrape market trends
+      const trends = await WebScrapingService.scrapeMarketTrends(scrapingQuery, dataInstructions);
+      
+      // Scrape news articles
+      const newsArticles = await WebScrapingService.scrapeNewsArticles(scrapingQuery, 10);
+      
+      // Combine results
+      const combinedResults = {
+        trends: trends,
+        news: newsArticles,
+        timestamp: new Date().toISOString(),
+        query: scrapingQuery,
+        instructions: dataInstructions
+      };
+      
+      setScrapingResults([combinedResults]);
+      
+      console.log('Scraped data:', combinedResults);
+    } catch (err) {
+      console.error('Error scraping data:', err);
+      setError('Failed to scrape market data. Please try again.');
+    } finally {
+      setIsScrapingData(false);
+    }
+  };
+
+  const importScrapedData = async (dataType: 'trends' | 'news', items: any[]) => {
+    try {
+      if (dataType === 'trends') {
+        for (const item of items) {
+          const trendData: Omit<MarketTrend, 'id' | 'created_at' | 'updated_at'> = {
+            trend_name: item.name,
+            trend_category: item.category.toLowerCase() as MarketTrend['trend_category'],
+            description: item.description,
+            trend_direction: item.direction === 'up' ? 'growing' : item.direction === 'down' ? 'declining' : 'stable',
+            confidence_score: item.relevance,
+            relevance_to_product: item.relevance,
+            potential_impact_score: item.relevance,
+            opportunity_threat: item.direction === 'up' ? 'opportunity' : 'neutral',
+            data_sources: [item.source],
+            ai_generated: true
+          };
+          
+          const newTrend = await MarketIntelligenceService.createMarketTrend(trendData);
+          setTrends(prev => [newTrend, ...prev]);
+        }
+      } else if (dataType === 'news') {
+        for (const item of items) {
+          const newsData: Omit<MarketNews, 'id' | 'created_at' | 'updated_at'> = {
+            headline: item.headline,
+            summary: item.summary,
+            source_name: item.source,
+            source_url: item.url,
+            published_date: item.publishedDate,
+            news_category: item.category,
+            relevance_score: 0.8,
+            impact_assessment: 'positive',
+            ai_generated: true
+          };
+          
+          const newNews = await MarketIntelligenceService.createMarketNews(newsData);
+          setNews(prev => [newNews, ...prev]);
+        }
+      }
+      
+      // Clear scraping results after import
+      setScrapingResults([]);
+      setShowDataScraper(false);
+      
+      // Reload analytics
+      loadAllData();
+      
+    } catch (err) {
+      console.error('Error importing scraped data:', err);
+      setError('Failed to import scraped data');
     }
   };
 
@@ -414,9 +511,16 @@ const MarketIntelligence: React.FC = () => {
         </div>
         <div className="flex space-x-3">
           <button
+            onClick={() => setShowDataScraper(true)}
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+          >
+            <Download size={20} />
+            <span>Scrape Data</span>
+          </button>
+          <button
             onClick={generateAIInsights}
             disabled={loadingAI}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center space-x-2 disabled:opacity-50"
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
           >
             <Brain size={20} />
             <span>{loadingAI ? 'Analyzing...' : 'AI Insights'}</span>
@@ -447,7 +551,7 @@ const MarketIntelligence: React.FC = () => {
               <AlertTriangle className="text-red-500" size={20} />
               <p className="text-red-800">{error}</p>
             </div>
-            <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
+            <button onClick={() => setError(null)} className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
               <X size={16} />
             </button>
           </div>
@@ -555,7 +659,7 @@ const MarketIntelligence: React.FC = () => {
             <h3 className="text-lg font-semibold">Market Trends</h3>
             <button
               onClick={() => setShowTrendForm(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <Plus size={16} />
               <span>Add Trend</span>
@@ -596,10 +700,10 @@ const MarketIntelligence: React.FC = () => {
                       <h4 className="font-medium">{trend.trend_name}</h4>
                     </div>
                     <div className="flex space-x-1">
-                      <button onClick={() => startEditTrend(trend)} className="text-gray-500 hover:text-blue-600">
+                      <button onClick={() => startEditTrend(trend)} className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
                         <Edit2 size={14} />
                       </button>
-                      <button onClick={() => deleteTrend(trend)} className="text-gray-500 hover:text-red-600">
+                      <button onClick={() => deleteTrend(trend)} className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -647,7 +751,7 @@ const MarketIntelligence: React.FC = () => {
                 <p className="text-gray-600 mb-4">Start tracking market trends to stay competitive</p>
                 <button
                   onClick={() => setShowTrendForm(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   Add First Trend
                 </button>
@@ -664,7 +768,7 @@ const MarketIntelligence: React.FC = () => {
             <h3 className="text-lg font-semibold">Competitive Intelligence</h3>
             <button
               onClick={() => setShowCompetitorForm(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <Plus size={16} />
               <span>Add Competitor</span>
@@ -713,10 +817,10 @@ const MarketIntelligence: React.FC = () => {
                         Threat: {Math.round(competitor.threat_level_score * 100)}%
                       </span>
                       <div className="flex space-x-1">
-                        <button onClick={() => startEditCompetitor(competitor)} className="text-gray-500 hover:text-blue-600">
+                        <button onClick={() => startEditCompetitor(competitor)} className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
                           <Edit2 size={14} />
                         </button>
-                        <button onClick={() => deleteCompetitor(competitor)} className="text-gray-500 hover:text-red-600">
+                        <button onClick={() => deleteCompetitor(competitor)} className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -776,7 +880,7 @@ const MarketIntelligence: React.FC = () => {
                 <p className="text-gray-600 mb-4">Start building your competitive intelligence</p>
                 <button
                   onClick={() => setShowCompetitorForm(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   Add First Competitor
                 </button>
@@ -793,7 +897,7 @@ const MarketIntelligence: React.FC = () => {
             <h3 className="text-lg font-semibold">Market News</h3>
             <button
               onClick={() => setShowNewsForm(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <Plus size={16} />
               <span>Add News</span>
@@ -873,11 +977,7 @@ const MarketIntelligence: React.FC = () => {
                     <div className="flex items-center space-x-2 ml-4">
                       <button
                         onClick={() => toggleBookmark(item)}
-                        className={`p-2 rounded ${
-                          item.is_bookmarked 
-                            ? 'text-yellow-600 hover:text-yellow-700' 
-                            : 'text-gray-400 hover:text-yellow-600'
-                        }`}
+                        className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                       >
                         {item.is_bookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
                       </button>
@@ -904,7 +1004,7 @@ const MarketIntelligence: React.FC = () => {
                 <p className="text-gray-600 mb-4">Stay informed about market developments</p>
                 <button
                   onClick={() => setShowNewsForm(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   Add News Article
                 </button>
@@ -1034,7 +1134,7 @@ const MarketIntelligence: React.FC = () => {
                     setShowTrendForm(false);
                     resetTrendForm();
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <X size={24} />
                 </button>
@@ -1162,13 +1262,13 @@ const MarketIntelligence: React.FC = () => {
                   setShowTrendForm(false);
                   resetTrendForm();
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Cancel
               </button>
               <button
                 onClick={() => editingTrend ? updateTrend(editingTrend) : createTrend()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 <Save size={16} />
                 <span>{editingTrend ? 'Update' : 'Create'} Trend</span>
@@ -1192,7 +1292,7 @@ const MarketIntelligence: React.FC = () => {
                     setShowCompetitorForm(false);
                     resetCompetitorForm();
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <X size={24} />
                 </button>
@@ -1286,13 +1386,13 @@ const MarketIntelligence: React.FC = () => {
                   setShowCompetitorForm(false);
                   resetCompetitorForm();
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Cancel
               </button>
               <button
                 onClick={() => editingCompetitor ? updateCompetitor(editingCompetitor) : createCompetitor()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 <Save size={16} />
                 <span>{editingCompetitor ? 'Update' : 'Create'} Competitor</span>
@@ -1314,7 +1414,7 @@ const MarketIntelligence: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowAIInsights(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <X size={24} />
                 </button>
@@ -1353,9 +1453,159 @@ const MarketIntelligence: React.FC = () => {
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
               <button
                 onClick={() => setShowAIInsights(false)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Close Insights
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Data Scraper Modal */}
+      {showDataScraper && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Download className="text-green-600" size={24} />
+                  <h2 className="text-xl font-semibold">Market Data Scraper</h2>
+                </div>
+                <button
+                  onClick={() => setShowDataScraper(false)}
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Instructions Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Data Collection Instructions (Optional)
+                </label>
+                <textarea
+                  value={dataInstructions}
+                  onChange={(e) => setDataInstructions(e.target.value)}
+                  placeholder="Describe what kind of market data you want to collect. For example: 'Focus on technology trends in healthcare', 'Look for emerging fintech companies', 'Find consumer behavior changes in retail', etc."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  rows={4}
+                />
+              </div>
+
+              {/* Search Query */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Search Query *
+                </label>
+                <input
+                  type="text"
+                  value={scrapingQuery}
+                  onChange={(e) => setScrapingQuery(e.target.value)}
+                  placeholder="Enter your market research query (e.g., 'AI in healthcare', 'sustainable fashion trends')"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              {/* Scrape Button */}
+              <button
+                onClick={handleDataScraping}
+                disabled={isScrapingData || !scrapingQuery.trim()}
+                className="w-full px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
+              >
+                {isScrapingData ? (
+                  <>
+                    <Loader className="animate-spin" size={20} />
+                    <span>Scraping Data...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search size={20} />
+                    <span>Scrape Market Data</span>
+                  </>
+                )}
+              </button>
+
+              {/* Scraping Results */}
+              {scrapingResults.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium mb-4">Scraped Data Results</h3>
+                  {scrapingResults.map((result, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="font-medium">Query: "{result.query}"</h4>
+                        <span className="text-sm text-gray-500">
+                          {new Date(result.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Market Trends */}
+                      {result.trends && result.trends.length > 0 && (
+                        <div className="mb-4">
+                          <div className="flex justify-between items-center mb-2">
+                            <h5 className="font-medium text-blue-600">Market Trends ({result.trends.length})</h5>
+                            <button
+                              onClick={() => importScrapedData('trends', result.trends)}
+                              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+                            >
+                              Import Trends
+                            </button>
+                          </div>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {result.trends.map((trend: any, tIndex: number) => (
+                              <div key={tIndex} className="bg-blue-50 p-3 rounded">
+                                <div className="font-medium">{trend.name}</div>
+                                <div className="text-sm text-gray-600">{trend.category} • {trend.direction}</div>
+                                <div className="text-sm text-gray-500 mt-1">{trend.description}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* News Articles */}
+                      {result.news && result.news.length > 0 && (
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <h5 className="font-medium text-green-600">News Articles ({result.news.length})</h5>
+                            <button
+                              onClick={() => importScrapedData('news', result.news)}
+                              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+                            >
+                              Import News
+                            </button>
+                          </div>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {result.news.map((article: any, nIndex: number) => (
+                              <div key={nIndex} className="bg-green-50 p-3 rounded">
+                                <div className="font-medium">{article.headline}</div>
+                                <div className="text-sm text-gray-600">{article.source}</div>
+                                <div className="text-sm text-gray-500 mt-1">{article.summary}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setScrapingResults([]);
+                  setScrapingQuery('');
+                  setDataInstructions('');
+                  setShowDataScraper(false);
+                }}
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+              >
+                Close
               </button>
             </div>
           </div>

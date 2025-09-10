@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { Upload, FolderPlus, Search, Filter, File, FileText, Image, Video, Archive, Trash2, Edit, Eye, Download, Star, Clock, User, Tag, Plus, Folder, FolderOpen, ChevronRight, ChevronDown, BookOpen, Database, Settings, MessageSquare, AlertCircle, Loader } from 'lucide-react';
 import { KnowledgeBaseService, KBFolder, KBDocument, KBChatMessage } from './services/knowledgeBaseService';
+import { AIService, ChatMessage, ChatContext } from './services/aiService';
 
 const KnowledgeBase: React.FC = () => {
   const { user } = useAuth();
@@ -11,6 +12,8 @@ const KnowledgeBase: React.FC = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [newFolderModalOpen, setNewFolderModalOpen] = useState(false);
   const [chatQuery, setChatQuery] = useState('');
+  const [isAITyping, setIsAITyping] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State management
@@ -204,44 +207,74 @@ const KnowledgeBase: React.FC = () => {
   // Chat operations
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatQuery.trim()) return;
+    if (!chatQuery.trim() || isAITyping) return;
 
-    const userMessage: KBChatMessage = {
+    const userQuery = chatQuery.trim();
+    setChatQuery('');
+    setIsAITyping(true);
+    setError(null);
+
+    // Generate conversation ID if first message
+    const conversationId = currentConversationId || crypto.randomUUID();
+    if (!currentConversationId) {
+      setCurrentConversationId(conversationId);
+    }
+
+    // Add user message to UI immediately
+    const userMessageForUI: KBChatMessage = {
       message_type: 'user',
-      content: chatQuery.trim()
+      content: userQuery,
+      created_at: new Date().toISOString()
     };
+    setChatMessages(prev => [...prev, userMessageForUI]);
 
     try {
-      // Add user message
-      const savedUserMessage = await KnowledgeBaseService.createChatMessage(userMessage);
-      setChatMessages(prev => [...prev, savedUserMessage]);
-
-      // Generate AI response
-      const allDocuments = await KnowledgeBaseService.getAllDocuments();
-      const aiResponse = await KnowledgeBaseService.generateAIResponse(chatQuery.trim(), allDocuments);
-      
-      // Find related documents
-      const relatedDocs = allDocuments
-        .filter(doc => 
-          doc.name.toLowerCase().includes(chatQuery.toLowerCase()) ||
-          doc.tags?.some(tag => tag.toLowerCase().includes(chatQuery.toLowerCase()))
-        )
-        .slice(0, 3)
-        .map(doc => doc.name);
-
-      const assistantMessage: KBChatMessage = {
-        message_type: 'assistant',
-        content: aiResponse,
-        related_documents: relatedDocs.length > 0 ? relatedDocs : undefined
+      // Build enhanced context for knowledge base queries
+      const kbContext: ChatContext = {
+        currentView: 'knowledge-base',
+        userQuery: userQuery,
+        knowledgeBase: {
+          documents: await KnowledgeBaseService.getAllDocuments(),
+          folders: folders,
+          recentSearches: [userQuery]
+        }
       };
 
-      const savedAssistantMessage = await KnowledgeBaseService.createChatMessage(assistantMessage);
-      setChatMessages(prev => [...prev, savedAssistantMessage]);
+      // Generate comprehensive AI response using the new AIService
+      const aiMessage = await AIService.generateResponse(userQuery, kbContext, conversationId);
       
-      setChatQuery('');
+      // Convert to KB chat message format
+      const aiChatMessage: KBChatMessage = {
+        message_type: 'assistant',
+        content: aiMessage.content,
+        related_documents: aiMessage.sources?.slice(0, 5).map(source => source.title) || undefined,
+        created_at: new Date().toISOString()
+      };
+
+      // Save to knowledge base chat history
+      try {
+        await KnowledgeBaseService.createChatMessage(userMessageForUI);
+        await KnowledgeBaseService.createChatMessage(aiChatMessage);
+      } catch (saveError) {
+        console.warn('Failed to save chat messages to KB service:', saveError);
+      }
+
+      // Add AI response to UI
+      setChatMessages(prev => [...prev, aiChatMessage]);
+      
     } catch (err) {
-      console.error('Error in chat:', err);
-      setError('Failed to process chat message');
+      console.error('Error in AI chat:', err);
+      setError(err instanceof Error ? err.message : 'Failed to get AI response. Please try again.');
+      
+      // Add error message to chat
+      const errorMessage: KBChatMessage = {
+        message_type: 'assistant',
+        content: 'I apologize, but I encountered an error while processing your request. Please try asking your question again or check your network connection.',
+        created_at: new Date().toISOString()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsAITyping(false);
     }
   };
 
@@ -315,7 +348,7 @@ const KnowledgeBase: React.FC = () => {
                 e.stopPropagation();
                 toggleFolder(folder.id!);
               }}
-              className="p-1"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               {folder.is_expanded ? (
                 <ChevronDown size={14} className="text-gray-600" />
@@ -336,7 +369,7 @@ const KnowledgeBase: React.FC = () => {
               e.stopPropagation();
               handleDeleteFolder(folder);
             }}
-            className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:text-red-700"
+            className="opacity-0 group-hover:opacity-100 px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             title="Delete folder"
           >
             <Trash2 size={12} />
@@ -384,14 +417,14 @@ const KnowledgeBase: React.FC = () => {
           <button
             onClick={() => setUploadModalOpen(true)}
             disabled={uploading}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+            className="w-full px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
           >
             {uploading ? <Loader className="animate-spin" size={16} /> : <Upload size={16} />}
             <span>{uploading ? 'Uploading...' : 'Upload Documents'}</span>
           </button>
           <button
             onClick={() => setNewFolderModalOpen(true)}
-            className="w-full border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center space-x-2"
+            className="w-full px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
           >
             <FolderPlus size={16} />
             <span>New Folder</span>
@@ -407,7 +440,7 @@ const KnowledgeBase: React.FC = () => {
                 <p className="text-sm text-red-800">{error}</p>
                 <button
                   onClick={() => setError(null)}
-                  className="text-xs text-red-600 hover:text-red-800 mt-1"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   Dismiss
                 </button>
@@ -418,31 +451,70 @@ const KnowledgeBase: React.FC = () => {
 
         {/* Navigation */}
         <div className="p-4 border-b border-gray-200">
-          <nav className="space-y-1">
-            {[
-              { id: 'documents', label: 'All Documents', icon: FileText },
-              { id: 'folders', label: 'Folder View', icon: Folder },
-              { id: 'chat', label: 'Ask Knowledge Base', icon: MessageSquare },
-              { id: 'recent', label: 'Recent', icon: Clock },
-              { id: 'starred', label: 'Starred', icon: Star },
-              { id: 'search', label: 'Search', icon: Search }
-            ].map(item => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleViewChange(item.id as any)}
-                  className={`w-full flex items-center space-x-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                    activeView === item.id
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Icon size={16} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+          <nav className="space-y-2">
+            {/* 1. All Documents (Main Category) */}
+            <button
+              onClick={() => handleViewChange('documents')}
+              className={`w-full px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
+                activeView === 'documents' ? 'bg-green-200' : ''
+              }`}
+            >
+              <FileText size={16} />
+              <span>All Documents</span>
+            </button>
+
+            {/* 2. Folder View (Parent Category) */}
+            <button
+              onClick={() => handleViewChange('folders')}
+              className={`w-full px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
+                activeView === 'folders' ? 'bg-green-200' : ''
+              }`}
+            >
+              <Folder size={16} />
+              <span>Folder View</span>
+            </button>
+            
+            {/* 3. Recent (Parent Category) */}
+            <button
+              onClick={() => handleViewChange('recent')}
+              className={`w-full px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
+                activeView === 'recent' ? 'bg-green-200' : ''
+              }`}
+            >
+              <Clock size={16} />
+              <span>Recent</span>
+            </button>
+            
+            {/* 4. Starred (Parent Category) */}
+            <button
+              onClick={() => handleViewChange('starred')}
+              className={`w-full px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
+                activeView === 'starred' ? 'bg-green-200' : ''
+              }`}
+            >
+              <Star size={16} />
+              <span>Starred</span>
+            </button>
+
+            {/* 5. Ask Knowledge Base (Standard Button) */}
+            <button
+              onClick={() => handleViewChange('chat')}
+              className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium shadow-md hover:shadow-lg transition-all flex items-center space-x-2"
+            >
+              <MessageSquare size={16} />
+              <span>Ask Knowledge Base</span>
+            </button>
+
+            {/* 6. Search (Utility) */}
+            <button
+              onClick={() => handleViewChange('search')}
+              className={`w-full px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
+                activeView === 'search' ? 'bg-green-200' : ''
+              }`}
+            >
+              <Search size={16} />
+              <span>Search</span>
+            </button>
           </nav>
         </div>
 
@@ -452,7 +524,7 @@ const KnowledgeBase: React.FC = () => {
             <h3 className="text-sm font-semibold text-gray-700">Folders</h3>
             <button
               onClick={loadFolders}
-              className="text-gray-400 hover:text-gray-600"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               title="Refresh folders"
             >
               <Settings size={14} />
@@ -466,13 +538,15 @@ const KnowledgeBase: React.FC = () => {
           ) : (
             <div className="text-center py-8 text-gray-500">
               <Folder className="mx-auto h-12 w-12 text-gray-300 mb-2" />
-              <p className="text-sm">No folders yet</p>
-              <button
-                onClick={() => setNewFolderModalOpen(true)}
-                className="text-xs text-blue-600 hover:text-blue-800 mt-1"
-              >
-                Create your first folder
-              </button>
+              <p className="text-sm mb-4">No folders yet</p>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setNewFolderModalOpen(true)}
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+                >
+                  Create your first folder
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -497,7 +571,7 @@ const KnowledgeBase: React.FC = () => {
             <button
               onClick={handleSearch}
               disabled={!searchQuery.trim()}
-              className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center space-x-2"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
             >
               <Search size={16} />
               <span>Search</span>
@@ -521,7 +595,7 @@ const KnowledgeBase: React.FC = () => {
                   {selectedFolder && (
                     <button
                       onClick={() => setSelectedFolder(null)}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                     >
                       Clear filter
                     </button>
@@ -546,13 +620,13 @@ const KnowledgeBase: React.FC = () => {
                       <div className="flex space-x-1">
                         <button
                           onClick={() => handleToggleStar(doc)}
-                          className={`p-1 ${doc.starred ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}
+                          className={`px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${doc.starred ? 'text-yellow-500' : ''}`}
                         >
                           <Star size={14} fill={doc.starred ? 'currentColor' : 'none'} />
                         </button>
                         <button
                           onClick={() => handleDeleteDocument(doc)}
-                          className="p-1 text-gray-400 hover:text-red-500"
+                          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                           title="Delete document"
                         >
                           <Trash2 size={14} />
@@ -623,7 +697,7 @@ const KnowledgeBase: React.FC = () => {
                   </p>
                   <button
                     onClick={() => setUploadModalOpen(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                   >
                     Upload Documents
                   </button>
@@ -674,7 +748,7 @@ const KnowledgeBase: React.FC = () => {
                   <p className="text-gray-600 mb-4">Create folders to organize your documents</p>
                   <button
                     onClick={() => setNewFolderModalOpen(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                   >
                     Create First Folder
                   </button>
@@ -705,7 +779,7 @@ const KnowledgeBase: React.FC = () => {
                         </div>
                         <button
                           onClick={() => handleToggleStar(doc)}
-                          className={`p-1 ${doc.starred ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}
+                          className={`px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${doc.starred ? 'text-yellow-500' : ''}`}
                         >
                           <Star size={14} fill={doc.starred ? 'currentColor' : 'none'} />
                         </button>
@@ -820,32 +894,67 @@ const KnowledgeBase: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {chatMessages.map(message => (
-                      <div key={message.id} className={`flex ${message.message_type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {chatMessages.map((message, index) => (
+                      <div key={message.id || index} className={`flex ${message.message_type === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] p-3 rounded-lg ${
                           message.message_type === 'user' 
                             ? 'bg-blue-600 text-white' 
-                            : 'bg-white border border-gray-200'
+                            : 'bg-white border border-gray-200 shadow-sm'
                         }`}>
-                          <p className="text-sm">{message.content}</p>
-                          {message.related_documents && message.related_documents.length > 0 && (
-                            <div className="mt-2 pt-2 border-t border-gray-200">
-                              <p className="text-xs text-gray-600 mb-1">Related documents:</p>
-                              <div className="flex flex-wrap gap-1">
-                                {message.related_documents.map((doc, index) => (
-                                  <span key={index} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                                    {doc}
-                                  </span>
-                                ))}
+                          <div className="flex items-start space-x-2">
+                            {message.message_type === 'assistant' && (
+                              <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                <MessageSquare size={12} className="text-white" />
                               </div>
+                            )}
+                            <div className="flex-1">
+                              <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                              {message.related_documents && message.related_documents.length > 0 && (
+                                <div className="mt-3 pt-2 border-t border-gray-100">
+                                  <p className="text-xs text-gray-600 mb-2 font-medium">📄 Related documents:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {message.related_documents.map((doc, docIndex) => (
+                                      <button
+                                        key={docIndex} 
+                                        onClick={() => {
+                                          setSearchQuery(doc);
+                                          handleSearch();
+                                        }}
+                                        className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+                                        title={`Search for: ${doc}`}
+                                      >
+                                        {doc}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              <p className="text-xs opacity-70 mt-2 flex items-center space-x-1">
+                                <Clock size={10} />
+                                <span>{message.created_at ? new Date(message.created_at).toLocaleTimeString() : 'Now'}</span>
+                              </p>
                             </div>
-                          )}
-                          <p className="text-xs opacity-70 mt-1">
-                            {message.created_at ? new Date(message.created_at).toLocaleTimeString() : ''}
-                          </p>
+                          </div>
                         </div>
                       </div>
                     ))}
+                    {isAITyping && (
+                      <div className="flex justify-start">
+                        <div className="max-w-[80%] p-3 rounded-lg bg-white border border-gray-200 shadow-sm">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <MessageSquare size={12} className="text-white" />
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                            </div>
+                            <span className="text-xs text-gray-500">AI is thinking...</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -861,32 +970,59 @@ const KnowledgeBase: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  disabled={!chatQuery.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+                  disabled={!chatQuery.trim() || isAITyping}
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
                 >
-                  <MessageSquare size={16} />
-                  <span>Ask</span>
+                  {isAITyping ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <span>Thinking...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare size={16} />
+                      <span>Ask</span>
+                    </>
+                  )}
                 </button>
               </form>
 
               {/* Quick Questions */}
               <div className="mt-4">
-                <p className="text-sm text-gray-600 mb-2">Quick questions:</p>
+                <p className="text-sm text-gray-600 mb-2">💡 Quick questions:</p>
                 <div className="flex flex-wrap gap-2">
                   {[
                     'What documents do I have?',
-                    'Show me recent uploads',
+                    'Show me recent uploads', 
                     'Find technical documentation',
-                    'What wireframes are available?'
+                    'What wireframes are available?',
+                    'Summarize my project documents',
+                    'What are the key requirements?'
                   ].map((question, index) => (
                     <button
                       key={index}
                       onClick={() => setChatQuery(question)}
-                      className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-full"
+                      disabled={isAITyping}
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {question}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* AI Capabilities Notice */}
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <div className="flex-shrink-0 w-5 h-5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <MessageSquare size={10} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900 mb-1">Enhanced AI Assistant</p>
+                    <p className="text-xs text-blue-700">
+                      This AI assistant has access to your entire platform including notes, calendar, priorities, meetings, and stakeholder data. Ask complex questions about your projects!
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -898,7 +1034,17 @@ const KnowledgeBase: React.FC = () => {
       {uploadModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Upload Documents</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Upload Documents</h3>
+              <button
+                onClick={() => setUploadModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             
             <div 
               onClick={() => fileInputRef.current?.click()}
@@ -939,13 +1085,13 @@ const KnowledgeBase: React.FC = () => {
             <div className="flex space-x-3 mt-6">
               <button
                 onClick={() => setUploadModalOpen(false)}
-                className="flex-1 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50"
+                className="flex-1 px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Cancel
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="flex-1 px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Choose Files
               </button>
@@ -958,7 +1104,25 @@ const KnowledgeBase: React.FC = () => {
       {newFolderModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Create New Folder</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Create New Folder</h3>
+              <button
+                onClick={() => {
+                  setNewFolderModalOpen(false);
+                  setNewFolderForm({
+                    name: '',
+                    description: '',
+                    folder_type: 'general',
+                    parent_id: undefined
+                  });
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             
             <div className="space-y-4">
               <div>
@@ -1014,14 +1178,14 @@ const KnowledgeBase: React.FC = () => {
                     parent_id: undefined
                   });
                 }}
-                className="flex-1 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50"
+                className="flex-1 px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateFolder}
                 disabled={!newFolderForm.name.trim()}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
               >
                 Create Folder
               </button>

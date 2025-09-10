@@ -38,34 +38,34 @@ export const useRole = () => {
 // Role-specific module visibility and configuration
 const MODULE_VISIBILITY_DEFAULTS = {
   product_owner: {
-    show: ['priorities', 'meetings', 'stakeholders', 'daily_planning', 'knowledge', 'analytics'],
+    show: ['dashboard', 'unified', 'priorities', 'meetings', 'stakeholders', 'planning', 'knowledge', 'analytics', 'notes', 'calendar', 'emails', 'settings'],
     hide: ['market'],
-    emphasize: ['priorities', 'stakeholders']
+    emphasize: ['priorities', 'stakeholders', 'notes']
   },
   scrum_master: {
-    show: ['priorities', 'meetings', 'stakeholders', 'daily_planning', 'knowledge', 'analytics'],
+    show: ['dashboard', 'unified', 'priorities', 'meetings', 'stakeholders', 'planning', 'knowledge', 'analytics', 'notes', 'calendar', 'settings'],
     hide: ['emails', 'market'],
-    emphasize: ['meetings', 'daily_planning']
+    emphasize: ['meetings', 'planning', 'calendar']
   },
   business_analyst: {
-    show: ['priorities', 'meetings', 'stakeholders', 'knowledge', 'analytics'],
-    hide: ['market'],
-    emphasize: ['knowledge', 'stakeholders']
+    show: ['dashboard', 'unified', 'priorities', 'meetings', 'stakeholders', 'knowledge', 'analytics', 'notes', 'emails', 'settings'],
+    hide: ['market', 'planning'],
+    emphasize: ['knowledge', 'stakeholders', 'notes']
   },
   release_train_engineer: {
-    show: ['priorities', 'meetings', 'stakeholders', 'daily_planning', 'analytics'],
+    show: ['dashboard', 'unified', 'priorities', 'meetings', 'stakeholders', 'planning', 'analytics', 'calendar', 'notes', 'settings'],
     hide: ['emails'],
-    emphasize: ['meetings', 'analytics']
+    emphasize: ['meetings', 'analytics', 'calendar']
   },
   product_manager: {
-    show: ['priorities', 'stakeholders', 'analytics', 'market'],
+    show: ['dashboard', 'unified', 'priorities', 'stakeholders', 'analytics', 'market', 'notes', 'calendar', 'emails', 'knowledge', 'settings'],
     hide: [],
-    emphasize: ['analytics', 'market']
+    emphasize: ['analytics', 'market', 'notes']
   },
   epic_owner: {
-    show: ['priorities', 'stakeholders', 'analytics', 'market'],
-    hide: ['daily_planning'],
-    emphasize: ['analytics', 'stakeholders']
+    show: ['dashboard', 'unified', 'priorities', 'stakeholders', 'analytics', 'market', 'notes', 'knowledge', 'settings'],
+    hide: ['planning'],
+    emphasize: ['analytics', 'stakeholders', 'notes']
   }
 };
 
@@ -192,10 +192,44 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getModuleTitle = (module: string): string => {
-    if (!currentRole) return module;
+    if (!currentRole) {
+      // Default titles when no role is set
+      const defaultTitles: Record<string, string> = {
+        dashboard: 'Dashboard',
+        unified: 'AI command center',
+        priorities: 'Priorities',
+        notes: 'Notes',
+        calendar: 'SAFe calendar',
+        emails: 'Email intelligence',
+        meetings: 'Meetings',
+        stakeholders: 'Stakeholders',
+        knowledge: 'Knowledge base',
+        market: 'Market intelligence',
+        planning: 'Daily planning',
+        analytics: 'Analytics',
+        settings: 'Settings'
+      };
+      return defaultTitles[module] || module;
+    }
     
     // Use role's navigation config if available, otherwise fall back to defaults
-    return currentRole.navigation_config[module] || module;
+    const defaultTitles: Record<string, string> = {
+      dashboard: 'Dashboard',
+      unified: 'AI command center',
+      priorities: 'Priorities',
+      notes: 'Notes',
+      calendar: 'SAFe calendar',
+      emails: 'Email intelligence',
+      meetings: 'Meetings',
+      stakeholders: 'Stakeholders',
+      knowledge: 'Knowledge base',
+      market: 'Market intelligence',
+      planning: 'Daily planning',
+      analytics: 'Analytics',
+      settings: 'Settings'
+    };
+    
+    return currentRole.navigation_config?.[module] || defaultTitles[module] || module;
   };
 
   const getActionLabel = (action: string): string => {
@@ -206,17 +240,41 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const shouldShowModule = (module: string): boolean => {
-    if (!currentRole) return true;
+    return true;
+    
+    // TODO: Re-enable role-based filtering later
+    /*
+    if (!currentRole) {
+      console.log(`📱 No role loaded, showing module: ${module}`);
+      return true;
+    }
     
     // Use role's module visibility if available, otherwise fall back to defaults
     const visibility = currentRole.module_visibility || MODULE_VISIBILITY_DEFAULTS[currentRole.id as keyof typeof MODULE_VISIBILITY_DEFAULTS];
     
-    if (!visibility) return true;
+    // If no visibility config, show all modules
+    if (!visibility) {
+      console.log(`📱 No visibility config for ${currentRole.id}, showing module: ${module}`);
+      return true;
+    }
     
-    if (visibility.hide?.includes(module)) return false;
-    if (visibility.show?.length > 0) return visibility.show.includes(module);
+    // If module is in hide list, don't show it
+    if (visibility.hide?.includes(module)) {
+      console.log(`📱 Module ${module} is in hide list for role ${currentRole.id}`);
+      return false;
+    }
     
+    // If show list exists and module is not in it, don't show it
+    if (visibility.show?.length > 0) {
+      const shouldShow = visibility.show.includes(module);
+      console.log(`📱 Module ${module} ${shouldShow ? 'IS' : 'IS NOT'} in show list for role ${currentRole.id}:`, visibility.show);
+      return shouldShow;
+    }
+    
+    // Default to showing the module
+    console.log(`📱 Defaulting to show module: ${module}`);
     return true;
+    */
   };
 
   const shouldEmphasizeModule = (module: string): boolean => {

@@ -148,4 +148,101 @@ export class StakeholderService {
 
     return data;
   }
+
+  // AI Chat Integration - Search functionality
+  static async searchStakeholders(query: string): Promise<Stakeholder[]> {
+    try {
+      const { data, error } = await supabase
+        .from('stakeholders')
+        .select('*')
+        .or(`name.ilike.%${query}%,role.ilike.%${query}%,department.ilike.%${query}%,notes.ilike.%${query}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Error searching stakeholders:', error);
+        // Fallback to mock data for development
+        return this.getMockStakeholders().filter(stakeholder => 
+          stakeholder.name.toLowerCase().includes(query.toLowerCase()) ||
+          stakeholder.role.toLowerCase().includes(query.toLowerCase()) ||
+          stakeholder.department.toLowerCase().includes(query.toLowerCase()) ||
+          (stakeholder.notes && stakeholder.notes.toLowerCase().includes(query.toLowerCase()))
+        );
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in searchStakeholders:', error);
+      // Fallback to mock search
+      return this.getMockStakeholders().filter(stakeholder => 
+        stakeholder.name.toLowerCase().includes(query.toLowerCase()) ||
+        stakeholder.role.toLowerCase().includes(query.toLowerCase()) ||
+        stakeholder.department.toLowerCase().includes(query.toLowerCase()) ||
+        (stakeholder.notes && stakeholder.notes.toLowerCase().includes(query.toLowerCase()))
+      );
+    }
+  }
+
+  // Mock data for development/fallback
+  private static getMockStakeholders(): Stakeholder[] {
+    return [
+      {
+        id: 'stakeholder-1',
+        name: 'Sarah Johnson',
+        role: 'Product Marketing Manager',
+        department: 'Marketing',
+        email: 'sarah.johnson@company.com',
+        phone: '+1-555-0123',
+        influence_level: 'high',
+        interest_level: 'high',
+        communication_preference: 'email',
+        notes: 'Key stakeholder for go-to-market strategy. Prefers detailed reports and regular updates on feature progress.',
+        last_contact: '2024-01-15T14:30:00Z',
+        next_scheduled_contact: '2024-01-22T10:00:00Z',
+        tags: ['marketing', 'product-strategy', 'go-to-market'],
+        projects_involved: ['mobile-app-v2', 'user-onboarding'],
+        created_at: '2024-01-10T09:00:00Z',
+        updated_at: '2024-01-15T14:30:00Z',
+        user_id: 'current-user'
+      },
+      {
+        id: 'stakeholder-2',
+        name: 'Mike Chen',
+        role: 'Engineering Director',
+        department: 'Engineering',
+        email: 'mike.chen@company.com',
+        phone: '+1-555-0124',
+        influence_level: 'high',
+        interest_level: 'medium',
+        communication_preference: 'meeting',
+        notes: 'Technical stakeholder focused on architecture and scalability. Needs technical specifications and performance metrics.',
+        last_contact: '2024-01-14T16:00:00Z',
+        next_scheduled_contact: '2024-01-21T15:00:00Z',
+        tags: ['engineering', 'architecture', 'technical'],
+        projects_involved: ['api-redesign', 'performance-optimization'],
+        created_at: '2024-01-08T11:00:00Z',
+        updated_at: '2024-01-14T16:00:00Z',
+        user_id: 'current-user'
+      },
+      {
+        id: 'stakeholder-3',
+        name: 'Lisa Park',
+        role: 'Customer Success Manager',
+        department: 'Customer Success',
+        email: 'lisa.park@company.com',
+        phone: '+1-555-0125',
+        influence_level: 'medium',
+        interest_level: 'high',
+        communication_preference: 'slack',
+        notes: 'Represents customer voice in product decisions. Provides valuable feedback on user experience and feature requests.',
+        last_contact: '2024-01-13T10:30:00Z',
+        next_scheduled_contact: '2024-01-20T14:00:00Z',
+        tags: ['customer-success', 'ux-feedback', 'customer-voice'],
+        projects_involved: ['user-experience-improvements', 'support-features'],
+        created_at: '2024-01-05T14:00:00Z',
+        updated_at: '2024-01-13T10:30:00Z',
+        user_id: 'current-user'
+      }
+    ];
+  }
 }

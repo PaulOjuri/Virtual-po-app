@@ -387,11 +387,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 <Icon size={16} />
                 <span>{tab.label}</span>
@@ -415,7 +411,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                     <input
                       type="text"
                       value={userProfile.name}
-                      onChange={(e) => handleProfileUpdate('name', e.target.value)}
+                      onChange={(e) => updateUserProfile('name', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -424,7 +420,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                     <input
                       type="email"
                       value={userProfile.email}
-                      onChange={(e) => handleProfileUpdate('email', e.target.value)}
+                      onChange={(e) => updateUserProfile('email', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -435,7 +431,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
                     <select
                       value={userProfile.role}
-                      onChange={(e) => handleProfileUpdate('role', e.target.value)}
+                      onChange={(e) => updateUserProfile('role', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="Product Owner">Product Owner</option>
@@ -450,7 +446,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                     <input
                       type="text"
                       value={userProfile.department || ''}
-                      onChange={(e) => handleProfileUpdate('department', e.target.value)}
+                      onChange={(e) => updateUserProfile('department', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -461,7 +457,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
                     <select
                       value={userProfile.timezone}
-                      onChange={(e) => handleProfileUpdate('timezone', e.target.value)}
+                      onChange={(e) => updateUserProfile('timezone', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="Europe/Brussels">Europe/Brussels (CET)</option>
@@ -475,7 +471,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
                     <select
                       value={userProfile.language}
-                      onChange={(e) => handleProfileUpdate('language', e.target.value)}
+                      onChange={(e) => updateUserProfile('language', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="English">English</option>
@@ -491,7 +487,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                 <button 
                   onClick={saveProfile}
                   disabled={saving}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
                 >
                   {saving ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
                   <span>Save Changes</span>
@@ -507,7 +503,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                 <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <User size={32} className="text-blue-600" />
                 </div>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                <button className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
                   Change Picture
                 </button>
               </div>
@@ -670,11 +666,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                       </div>
                       <button
                         onClick={() => handleIntegrationToggle(integration.integration_type, integration.connected)}
-                        className={`px-3 py-1 text-sm rounded-lg ${
-                          integration.connected
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                        }`}
+                        className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                       >
                         {integration.connected ? 'Disconnect' : 'Connect'}
                       </button>
@@ -762,7 +754,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                 </div>
                 <button
                   onClick={() => setShowPasswordForm(!showPasswordForm)}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   Change
                 </button>
@@ -782,7 +774,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                       <button
                         type="button"
                         onClick={() => setPasswordVisible(!passwordVisible)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                        className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 absolute right-3 top-1/2 transform -translate-y-1/2"
                       >
                         {passwordVisible ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -810,14 +802,14 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                     <button 
                       onClick={handlePasswordChange}
                       disabled={saving}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm flex items-center space-x-2 disabled:opacity-50"
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
                     >
                       {saving ? <Loader size={16} className="animate-spin" /> : null}
                       <span>Update Password</span>
                     </button>
                     <button
                       onClick={() => setShowPasswordForm(false)}
-                      className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm"
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                     >
                       Cancel
                     </button>
@@ -830,7 +822,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                   <h4 className="font-medium text-gray-900">Two-Factor Authentication</h4>
                   <p className="text-sm text-gray-600">Add extra security to your account</p>
                 </div>
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                <button className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
                   Enable
                 </button>
               </div>
@@ -863,7 +855,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                   ) : (
                     <button 
                       onClick={() => handleRevokeSession(session.id!)}
-                      className="text-red-600 hover:text-red-700 text-sm"
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                     >
                       Revoke
                     </button>
@@ -887,7 +879,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                 <button
                   onClick={exportData}
                   disabled={exportLoading}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
                 >
                   {exportLoading ? <Loader size={16} className="animate-spin" /> : <Download size={16} />}
                   <span>Export Data</span>
@@ -900,7 +892,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                 <button
                   onClick={importData}
                   disabled={importLoading}
-                  className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center space-x-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
                 >
                   {importLoading ? <Loader size={16} className="animate-spin" /> : <Upload size={16} />}
                   <span>Import Data</span>
@@ -920,7 +912,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
 
                 <button
                   onClick={deleteAllData}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <Trash2 size={16} />
                   <span>Delete All Data</span>
@@ -937,7 +929,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                       <div className="flex space-x-3">
                         <button
                           onClick={() => setShowDeleteConfirm(false)}
-                          className="flex-1 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50"
+                          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                           disabled={saving}
                         >
                           Cancel
@@ -945,7 +937,7 @@ const updateUserProfile = (field: keyof UserProfile, value: string) => {
                         <button
                           onClick={confirmDelete}
                           disabled={saving}
-                          className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center justify-center space-x-2"
+                          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                         >
                           {saving ? <Loader size={16} className="animate-spin" /> : null}
                           <span>Delete All Data</span>

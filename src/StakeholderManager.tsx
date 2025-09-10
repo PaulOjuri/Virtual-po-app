@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
+import { useRole } from './contexts/RoleContext';
 import { Users, User, Plus, Search, Filter, Edit, Trash2, Phone, Mail, MessageSquare, Calendar, 
          TrendingUp, AlertCircle, CheckCircle, Network, MoreHorizontal, X, Star, 
          Building, Tag, Clock, Activity } from 'lucide-react';
@@ -7,6 +8,7 @@ import { Stakeholder, StakeholderService, CommunicationLog } from './services/st
 
 const StakeholderManager: React.FC = () => {
   const { user } = useAuth();
+  const { applyTerminology, getActionLabel } = useRole();
   const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -231,13 +233,13 @@ const StakeholderManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">Stakeholder Management</h2>
+          <h2 className="text-3xl font-bold text-slate-900">{applyTerminology('Stakeholder Management')}</h2>
           <p className="text-slate-600 mt-1">Relationship intelligence and communication optimization</p>
         </div>
         <div className="flex space-x-3">
           <button
             onClick={() => setShowCreateForm(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
           >
             <Plus size={20} />
             <span>Add Stakeholder</span>
@@ -251,7 +253,7 @@ const StakeholderManager: React.FC = () => {
             <p className="text-red-800">{error}</p>
             <button 
               onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800 ml-2"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <X size={16} />
             </button>
@@ -296,13 +298,13 @@ const StakeholderManager: React.FC = () => {
           <div className="flex items-center space-x-2 ml-auto">
             <button
               onClick={() => setActiveView('list')}
-              className={`p-2 rounded-lg ${activeView === 'list' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <Users size={16} />
             </button>
             <button
               onClick={() => setActiveView('matrix')}
-              className={`p-2 rounded-lg ${activeView === 'matrix' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <TrendingUp size={16} />
             </button>
@@ -378,20 +380,20 @@ const StakeholderManager: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <button
                       onClick={() => handleViewDetails(stakeholder)}
-                      className="text-blue-600 hover:text-blue-800 text-sm"
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                     >
                       View Details
                     </button>
                     <div className="flex space-x-2">
                       <button
                         onClick={() => startEdit(stakeholder)}
-                        className="text-gray-600 hover:text-gray-800"
+                        className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                       >
                         <Edit size={14} />
                       </button>
                       <button
                         onClick={() => handleDeleteStakeholder(stakeholder)}
-                        className="text-red-600 hover:text-red-800"
+                        className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -529,7 +531,7 @@ const StakeholderManager: React.FC = () => {
                     setEditingStakeholder(null);
                     resetForm();
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <X size={24} />
                 </button>
@@ -696,14 +698,14 @@ const StakeholderManager: React.FC = () => {
                   setEditingStakeholder(null);
                   resetForm();
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Cancel
               </button>
               <button
                 onClick={editingStakeholder ? () => handleUpdateStakeholder({...editingStakeholder, ...formData}) : handleCreateStakeholder}
                 disabled={!formData.name || !formData.email || !formData.role || !formData.department}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 {editingStakeholder ? 'Update Stakeholder' : 'Add Stakeholder'}
               </button>
@@ -723,7 +725,7 @@ const StakeholderManager: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowStakeholderDetails(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <X size={24} />
                 </button>
@@ -852,13 +854,13 @@ const StakeholderManager: React.FC = () => {
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
               <button
                 onClick={() => startEdit(selectedStakeholder)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Edit Stakeholder
               </button>
               <button
                 onClick={() => setShowStakeholderDetails(false)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Close
               </button>

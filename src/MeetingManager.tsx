@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
+import { useRole } from './contexts/RoleContext';
 import { Calendar, Users, Clock, BarChart3, Plus, Edit2, Brain, Filter, Target, CheckSquare, 
          X, Trash2, Video, MapPin, Tag, AlertCircle, Save, FileText, Activity } from 'lucide-react';
 import { MeetingService, Meeting, MeetingAttendee, ActionItem, Decision } from './services/meetingService';
+import AIChat from './components/AIChat';
 
 const MeetingManager: React.FC = () => {
   const { user } = useAuth();
+  const { applyTerminology, getActionLabel } = useRole();
 
   // Core state
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -14,6 +17,7 @@ const MeetingManager: React.FC = () => {
   
   // View state
   const [activeTab, setActiveTab] = useState<'overview' | 'calendar' | 'analytics'>('overview');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'kanban'>('list');
   
   // Modal states
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -56,19 +60,10 @@ const MeetingManager: React.FC = () => {
     decisionsRecorded: 0
   });
 
-  // DEBUG: Monitor state changes
-  useEffect(() => {
-    console.log('DEBUG: showCreateForm state changed:', showCreateForm);
-  }, [showCreateForm]);
-
-  useEffect(() => {
-    console.log('DEBUG: meetings count changed:', meetings.length);
-  }, [meetings.length]);
 
   // Load data on mount
   useEffect(() => {
     if (user) {
-      console.log('DEBUG: User authenticated, loading data for:', user.email);
       loadMeetings();
       loadAnalytics();
     }
@@ -77,14 +72,12 @@ const MeetingManager: React.FC = () => {
   // Functions
   const loadMeetings = async () => {
     try {
-      console.log('DEBUG: Loading meetings...');
       setLoading(true);
       setError(null);
       const data = await MeetingService.getAllMeetings();
       setMeetings(data);
-      console.log('DEBUG: Loaded meetings:', data.length);
     } catch (err) {
-      console.error('DEBUG: Error loading meetings:', err);
+      console.error('Error loading meetings:', err);
       setError('Failed to load meetings');
     } finally {
       setLoading(false);
@@ -93,32 +86,26 @@ const MeetingManager: React.FC = () => {
 
   const loadAnalytics = async () => {
     try {
-      console.log('DEBUG: Loading analytics...');
       const data = await MeetingService.getMeetingAnalytics();
       setAnalytics(data);
-      console.log('DEBUG: Analytics loaded:', data);
     } catch (err) {
-      console.error('DEBUG: Error loading analytics:', err);
+      console.error('Error loading analytics:', err);
     }
   };
 
   const handleCreateMeeting = async () => {
-    console.log('DEBUG: handleCreateMeeting called');
     
     if (!user) {
-      console.log('DEBUG: No user authenticated');
       setError('You must be logged in to create meetings');
       return;
     }
 
     if (!formData.title || !formData.date || !formData.time) {
-      console.log('DEBUG: Missing required fields');
       setError('Please fill in required fields (Title, Date, Time)');
       return;
     }
 
     try {
-      console.log('DEBUG: Creating meeting with data:', formData);
       setError(null);
       
       const meetingData = {
@@ -130,20 +117,18 @@ const MeetingManager: React.FC = () => {
       };
 
       const newMeeting = await MeetingService.createMeeting(meetingData);
-      console.log('DEBUG: Meeting created:', newMeeting);
       
       setMeetings(prev => [newMeeting, ...prev]);
       resetForm();
       setShowCreateForm(false);
       await loadAnalytics();
     } catch (err) {
-      console.error('DEBUG: Error creating meeting:', err);
+      console.error('Error creating meeting:', err);
       setError(err instanceof Error ? err.message : 'Failed to create meeting');
     }
   };
 
   const handleUpdateMeeting = async (meeting: Meeting) => {
-    console.log('DEBUG: handleUpdateMeeting called for:', meeting.id);
     
     if (!user) {
       setError('You must be logged in to update meetings');
@@ -164,9 +149,8 @@ const MeetingManager: React.FC = () => {
       setShowCreateForm(false);
       resetForm();
       await loadAnalytics();
-      console.log('DEBUG: Meeting updated:', updatedMeeting.id);
     } catch (err) {
-      console.error('DEBUG: Error updating meeting:', err);
+      console.error('Error updating meeting:', err);
       setError(err instanceof Error ? err.message : 'Failed to update meeting');
     }
   };
@@ -174,7 +158,6 @@ const MeetingManager: React.FC = () => {
   const handleDeleteMeeting = async (meeting: Meeting) => {
     if (!window.confirm(`Are you sure you want to delete "${meeting.title}"?`)) return;
     
-    console.log('DEBUG: Deleting meeting:', meeting.id);
     
     try {
       setError(null);
@@ -182,15 +165,13 @@ const MeetingManager: React.FC = () => {
       setMeetings(prev => prev.filter(m => m.id !== meeting.id));
       setShowMeetingDetails(false);
       await loadAnalytics();
-      console.log('DEBUG: Meeting deleted successfully');
     } catch (err) {
-      console.error('DEBUG: Error deleting meeting:', err);
+      console.error('Error deleting meeting:', err);
       setError('Failed to delete meeting');
     }
   };
 
   const handleStatusUpdate = async (meetingId: string, status: Meeting['status']) => {
-    console.log('DEBUG: Updating status for meeting:', meetingId, 'to:', status);
     
     try {
       setError(null);
@@ -198,13 +179,12 @@ const MeetingManager: React.FC = () => {
       setMeetings(prev => prev.map(m => m.id === meetingId ? { ...m, status } : m));
       await loadAnalytics();
     } catch (err) {
-      console.error('DEBUG: Error updating status:', err);
+      console.error('Error updating status:', err);
       setError('Failed to update meeting status');
     }
   };
 
   const startEdit = (meeting: Meeting) => {
-    console.log('DEBUG: Starting edit for meeting:', meeting.id);
     
     setEditingMeeting(meeting);
     setFormData({
@@ -227,7 +207,6 @@ const MeetingManager: React.FC = () => {
   };
 
   const resetForm = () => {
-    console.log('DEBUG: Resetting form');
     setFormData({
       title: '',
       description: '',
@@ -248,7 +227,6 @@ const MeetingManager: React.FC = () => {
   };
 
   const addAttendee = () => {
-    console.log('DEBUG: Adding attendee');
     setFormData({
       ...formData,
       attendees: [...formData.attendees, {
@@ -321,16 +299,10 @@ const MeetingManager: React.FC = () => {
 
   // Debug handlers
   const handleAddMeetingClick = () => {
-    console.log('DEBUG: Add Meeting button clicked!');
-    console.log('DEBUG: Current showCreateForm state:', showCreateForm);
-    console.log('DEBUG: User authenticated:', !!user);
-    console.log('DEBUG: User email:', user?.email);
     setShowCreateForm(true);
-    console.log('DEBUG: Called setShowCreateForm(true)');
   };
 
   const handleButtonHover = () => {
-    console.log('DEBUG: Button hover detected');
   };
 
   // Loading state
@@ -360,14 +332,14 @@ const MeetingManager: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">Meeting Management</h2>
-          <p className="text-slate-600 mt-1">AI-driven meeting scheduling and insights</p>
+          <h2 className="text-3xl font-bold text-slate-900">{getActionLabel('schedule_meeting')} Management</h2>
+          <p className="text-slate-600 mt-1">AI-driven {applyTerminology('meeting')} scheduling and insights</p>
         </div>
         <div className="flex space-x-3">
           <button
             onClick={handleAddMeetingClick}
             onMouseEnter={handleButtonHover}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             style={{ 
               cursor: 'pointer',
               pointerEvents: 'auto',
@@ -391,7 +363,7 @@ const MeetingManager: React.FC = () => {
             </div>
             <button 
               onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <X size={16} />
             </button>
@@ -449,7 +421,7 @@ const MeetingManager: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -586,11 +558,10 @@ const MeetingManager: React.FC = () => {
                     
                     <button
                       onClick={() => {
-                        console.log('DEBUG: View details clicked for:', meeting.id);
                         setSelectedMeeting(meeting);
                         setShowMeetingDetails(true);
                       }}
-                      className="text-blue-600 hover:text-blue-800 p-1"
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                       title="View details"
                     >
                       <FileText size={16} />
@@ -598,7 +569,7 @@ const MeetingManager: React.FC = () => {
                     
                     <button
                       onClick={() => startEdit(meeting)}
-                      className="text-gray-600 hover:text-gray-800 p-1"
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                       title="Edit meeting"
                     >
                       <Edit2 size={16} />
@@ -606,7 +577,7 @@ const MeetingManager: React.FC = () => {
                     
                     <button
                       onClick={() => handleDeleteMeeting(meeting)}
-                      className="text-red-600 hover:text-red-800 p-1"
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                       title="Delete meeting"
                     >
                       <Trash2 size={16} />
@@ -628,7 +599,7 @@ const MeetingManager: React.FC = () => {
                 {meetings.length === 0 && (
                   <button
                     onClick={handleAddMeetingClick}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2"
+                    className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                   >
                     <Plus size={16} />
                     <span>Schedule Meeting</span>
@@ -699,7 +670,6 @@ const MeetingManager: React.FC = () => {
           style={{ zIndex: 9999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              console.log('DEBUG: Modal backdrop clicked, closing modal');
               setShowCreateForm(false);
             }
           }}
@@ -712,11 +682,10 @@ const MeetingManager: React.FC = () => {
                 </h2>
                 <button
                   onClick={() => {
-                    console.log('DEBUG: Close button clicked');
                     setShowCreateForm(false);
                     resetForm();
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <X size={24} />
                 </button>
@@ -744,7 +713,6 @@ const MeetingManager: React.FC = () => {
                     type="text"
                     value={formData.title}
                     onChange={(e) => {
-                      console.log('DEBUG: Title changed to:', e.target.value);
                       setFormData({...formData, title: e.target.value});
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -777,7 +745,6 @@ const MeetingManager: React.FC = () => {
                     type="date"
                     value={formData.date}
                     onChange={(e) => {
-                      console.log('DEBUG: Date changed to:', e.target.value);
                       setFormData({...formData, date: e.target.value});
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -793,7 +760,6 @@ const MeetingManager: React.FC = () => {
                     type="time"
                     value={formData.time}
                     onChange={(e) => {
-                      console.log('DEBUG: Time changed to:', e.target.value);
                       setFormData({...formData, time: e.target.value});
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -825,7 +791,6 @@ const MeetingManager: React.FC = () => {
                 </p>
                 <button
                   onClick={() => {
-                    console.log('DEBUG: Test save clicked');
                     if (editingMeeting) {
                       handleUpdateMeeting(editingMeeting);
                     } else {
@@ -833,7 +798,7 @@ const MeetingManager: React.FC = () => {
                     }
                   }}
                   disabled={!formData.title.trim() || !formData.date || !formData.time}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save size={16} />
                   <span>{editingMeeting ? 'Update Meeting (DEBUG)' : 'Create Meeting (DEBUG)'}</span>
@@ -844,11 +809,10 @@ const MeetingManager: React.FC = () => {
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
               <button
                 onClick={() => {
-                  console.log('DEBUG: Cancel clicked');
                   setShowCreateForm(false);
                   resetForm();
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Cancel
               </button>
@@ -869,10 +833,9 @@ const MeetingManager: React.FC = () => {
                 </div>
                 <button
                   onClick={() => {
-                    console.log('DEBUG: Meeting details modal closed');
                     setShowMeetingDetails(false);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <X size={24} />
                 </button>
@@ -928,14 +891,14 @@ const MeetingManager: React.FC = () => {
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
               <button
                 onClick={() => startEdit(selectedMeeting)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center space-x-2"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 <Edit2 size={16} />
                 <span>Edit Meeting</span>
               </button>
               <button
                 onClick={() => setShowMeetingDetails(false)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Close
               </button>
@@ -943,6 +906,15 @@ const MeetingManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* AI Chat Assistant */}
+      <AIChat 
+        currentContext="meetings"
+        contextData={{
+          meetings: meetings,
+          viewMode: viewMode
+        }}
+      />
     </div>
   );
 };

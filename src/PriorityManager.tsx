@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
+import { useRole } from './contexts/RoleContext';
 import { Target, Plus, Search, Filter, Edit, Trash2, Calendar, User, Star, Zap, MoreHorizontal, X, CheckSquare, Grid, List } from 'lucide-react';
 import { Priority, PriorityService } from './services/priorityService';
 import { DraggableMatrix } from './components/DraggableMatrix';
 import { PriorityTemplates } from './components/PriorityTemplates';
 import { BulkOperations } from './components/BulkOperations';
 import { AgingAlerts } from './components/AgingAlerts';
+import AIChat from './components/AIChat';
 
 const PriorityManager: React.FC = () => {
   const { user } = useAuth();
+  const { getActionLabel, getQuickActions, applyTerminology, getRoleSpecificTemplates } = useRole();
   const [priorities, setPriorities] = useState<Priority[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -231,13 +234,13 @@ const PriorityManager: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">Priority Management</h2>
-          <p className="text-slate-600 mt-1">Impact vs Urgency matrix with priority tracking</p>
+          <h2 className="text-3xl font-bold text-slate-900">{applyTerminology('Priority Management')}</h2>
+          <p className="text-slate-600 mt-1">Impact vs Urgency matrix with {applyTerminology('priority')} tracking</p>
         </div>
         <div className="flex space-x-3">
           <button
             onClick={() => setShowTemplates(true)}
-            className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
           >
             <Zap size={20} />
             <span>Templates</span>
@@ -248,7 +251,7 @@ const PriorityManager: React.FC = () => {
               setShowCreateForm(true);
               resetForm();
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
           >
             <Plus size={20} />
             <span>New Priority</span>
@@ -262,7 +265,7 @@ const PriorityManager: React.FC = () => {
             <p className="text-red-800">{error}</p>
             <button 
               onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800 ml-2"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <X size={16} />
             </button>
@@ -334,10 +337,10 @@ const PriorityManager: React.FC = () => {
           <div className="flex items-center space-x-2 ml-auto">
             <button
               onClick={() => setActiveView('matrix')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
                 activeView === 'matrix' 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'hover:bg-gray-100 text-gray-600'
+                  ? 'bg-green-200' 
+                  : ''
               }`}
               title="Matrix View"
             >
@@ -345,10 +348,10 @@ const PriorityManager: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveView('list')}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
                 activeView === 'list' 
-                  ? 'bg-blue-100 text-blue-600' 
-                  : 'hover:bg-gray-100 text-gray-600'
+                  ? 'bg-green-200' 
+                  : ''
               }`}
               title="List View"
             >
@@ -502,14 +505,14 @@ const PriorityManager: React.FC = () => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => startEdit(priority)}
-                            className="text-gray-600 hover:text-gray-800 p-1"
+                            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                             title="Edit priority"
                           >
                             <Edit size={14} />
                           </button>
                           <button
                             onClick={() => handleDeletePriority(priority)}
-                            className="text-red-600 hover:text-red-800 p-1"
+                            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                             title="Delete priority"
                           >
                             <Trash2 size={14} />
@@ -533,10 +536,10 @@ const PriorityManager: React.FC = () => {
                   {priorities.length === 0 && (
                     <button
                       onClick={() => setShowCreateForm(true)}
-                      className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2"
+                      className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                     >
                       <Plus size={16} />
-                      <span>Create Priority</span>
+                      <span>{getActionLabel('create_priority')}</span>
                     </button>
                   )}
                 </div>
@@ -553,14 +556,14 @@ const PriorityManager: React.FC = () => {
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  {editingPriority ? 'Edit Priority' : 'Create New Priority'}
+                  {editingPriority ? `Edit ${applyTerminology('Priority')}` : `${getActionLabel('create_priority')}`}
                 </h2>
                 <button
                   onClick={() => {
                     setShowCreateForm(false);
                     resetForm();
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <X size={24} />
                 </button>
@@ -691,7 +694,7 @@ const PriorityManager: React.FC = () => {
                   setShowCreateForm(false);
                   resetForm();
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Cancel
               </button>
@@ -704,9 +707,9 @@ const PriorityManager: React.FC = () => {
                   }
                 }}
                 disabled={!formData.title.trim()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {editingPriority ? 'Update Priority' : 'Create Priority'}
+{editingPriority ? `Update ${applyTerminology('Priority')}` : getActionLabel('create_priority')}
               </button>
             </div>
           </div>
@@ -730,6 +733,16 @@ const PriorityManager: React.FC = () => {
           });
           setShowTemplates(false);
           setShowCreateForm(true);
+        }}
+      />
+
+      {/* AI Chat Assistant */}
+      <AIChat 
+        currentContext="priorities"
+        contextData={{
+          priorities: priorities,
+          searchTerm: searchTerm,
+          activeView: activeView
         }}
       />
     </div>

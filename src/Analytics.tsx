@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRole } from './contexts/RoleContext';
 import { BarChart3, TrendingUp, TrendingDown, Calendar, Clock, Users, Target, MessageSquare, CheckCircle, AlertTriangle, Activity, PieChart, LineChart, Filter, Download, RefreshCw, ArrowUp, ArrowDown, Minus, Brain, Zap, Star, FileText } from 'lucide-react';
 import { 
   analyticsService,
@@ -16,6 +17,7 @@ import {
 } from './services/analyticsService';
 
 const Analytics: React.FC = () => {
+  const { applyTerminology } = useRole();
   const [activeView, setActiveView] = useState<'overview' | 'priorities' | 'communication' | 'performance' | 'trends'>('overview');
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [loading, setLoading] = useState(true);
@@ -148,7 +150,7 @@ const Analytics: React.FC = () => {
         <p className="text-gray-600 mb-4">{error}</p>
         <button
           onClick={() => loadAnalytics()}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
         >
           Try Again
         </button>
@@ -175,18 +177,18 @@ const Analytics: React.FC = () => {
             <option value="90d">Last 90 days</option>
             <option value="1y">Last year</option>
           </select>
-          <button className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+          <button className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
             <Filter size={16} />
             <span>Filter</span>
           </button>
-          <button className="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+          <button className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
             <Download size={16} />
             <span>Export</span>
           </button>
           <button 
             onClick={handleRefresh}
             disabled={refreshing}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 disabled:opacity-50"
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
           >
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
             <span>Refresh</span>
@@ -235,7 +237,7 @@ const Analytics: React.FC = () => {
 
           {aiInsights.length > 3 && (
             <div className="text-center">
-              <button className="text-purple-600 hover:text-purple-700 text-sm font-medium">
+              <button className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
                 View all {aiInsights.length} insights
               </button>
             </div>
@@ -773,7 +775,7 @@ const Analytics: React.FC = () => {
           <LineChart className="mx-auto h-16 w-16 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Advanced Trend Analysis</h3>
           <p className="text-gray-600 mb-4">Predictive analytics and advanced visualizations coming soon</p>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+          <button className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2">
             Configure Advanced Analytics
           </button>
         </div>

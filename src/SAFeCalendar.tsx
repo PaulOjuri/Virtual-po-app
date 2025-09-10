@@ -52,6 +52,7 @@ const SAFeCalendar: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [showCompleted, setShowCompleted] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<Partial<CalendarEvent>>({
@@ -183,7 +184,6 @@ const SAFeCalendar: React.FC = () => {
       setPIEvents(piEventsData);
     } catch (err) {
       setError('Failed to load calendar data');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -199,8 +199,6 @@ const SAFeCalendar: React.FC = () => {
 
   const createEvent = async () => {
     try {
-      console.log('Creating event with form data:', formData);
-      
       const eventData = {
         ...formData,
         startTime: formData.startTime!,
@@ -209,14 +207,9 @@ const SAFeCalendar: React.FC = () => {
       };
 
       const newEvent = await CalendarService.createEvent(eventData as CalendarEvent);
-      console.log('New event created:', newEvent);
       
       // Add the new event to the events state
-      setEvents(prev => {
-        const updatedEvents = [...prev, newEvent];
-        console.log('Updated events list:', updatedEvents);
-        return updatedEvents;
-      });
+      setEvents(prev => [...prev, newEvent]);
       
       // Create reminders if specified
       if (formData.reminderMinutes?.length) {
@@ -232,16 +225,14 @@ const SAFeCalendar: React.FC = () => {
               message: `${newEvent.title} starting in ${minutes} minutes`
             });
           } catch (reminderError) {
-            console.warn('Failed to create reminder:', reminderError);
+            // Reminder creation failed, but event was created successfully
           }
         }
       }
 
       setShowCreateForm(false);
       resetForm();
-      console.log('Event creation completed successfully');
     } catch (err) {
-      console.error('Error creating event:', err);
       setError('Failed to create event');
     }
   };
@@ -287,7 +278,6 @@ const SAFeCalendar: React.FC = () => {
   };
 
   const handleDayClick = (date: Date) => {
-    console.log('Day clicked:', date);
     setSelectedDate(date);
     setShowDayEvents(true);
   };
@@ -322,19 +312,13 @@ const SAFeCalendar: React.FC = () => {
     return true;
   });
 
-  // Debug log for events state
-  console.log('Current events state:', events);
-  console.log('Filtered events:', filteredEvents);
 
   const getUpcomingEvents = () => {
     const now = new Date();
-    console.log('Getting upcoming events from:', filteredEvents);
-    const upcomingEvents = filteredEvents
+    return filteredEvents
       .filter(event => new Date(event.startTime) > now)
       .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
       .slice(0, 5);
-    console.log('Upcoming events:', upcomingEvents);
-    return upcomingEvents;
   };
 
   const getTodayEvents = () => {
@@ -366,26 +350,21 @@ const SAFeCalendar: React.FC = () => {
           <p className="text-slate-600 mt-1">Track ceremonies, PI events, and agile activities</p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <div className="flex items-center justify-start gap-3">
+          <div className="relative w-64 h-10 bg-white border border-gray-300 rounded-lg shadow-sm flex items-center">
+            <Search size={16} className="absolute left-3 text-gray-400" />
             <input
               type="text"
               placeholder="Search events..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="pl-10 pr-4 h-full w-full bg-transparent border-0 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder:text-gray-400"
             />
           </div>
-
+          
           <button
-            onClick={() => {
-              console.log('New Event button clicked');
-              console.log('Before setting showCreateForm:', showCreateForm);
-              setShowCreateForm(true);
-              console.log('After setting showCreateForm to true');
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2"
+            onClick={() => setShowCreateForm(true)}
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
           >
             <Plus size={16} />
             <span>New Event</span>
@@ -395,67 +374,81 @@ const SAFeCalendar: React.FC = () => {
 
       {/* Filters and View Controls */}
       <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-700">View:</span>
-            {(['month', 'week', 'timebox', 'agenda'] as const).map(mode => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`px-3 py-1.5 rounded-md text-sm transition-colors ${
-                  viewMode === mode 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {mode.charAt(0).toUpperCase() + mode.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          <div className="w-px h-6 bg-gray-300"></div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-700">Ceremony:</span>
-            <select
-              value={ceremonyFilter}
-              onChange={(e) => setCeremonyFilter(e.target.value as any)}
-              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Ceremonies</option>
-              {ceremonyTypes.map(ceremony => (
-                <option key={ceremony.type} value={ceremony.type}>
-                  {ceremony.label}
-                </option>
+        <div className="mb-4">
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700">View:</span>
+              {(['month', 'week', 'timebox', 'agenda'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
+                    viewMode === mode 
+                      ? 'bg-green-200' 
+                      : ''
+                  }`}
+                >
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </button>
               ))}
-            </select>
-          </div>
+            </div>
 
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-700">Role:</span>
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            <div className="w-px h-6 bg-gray-300"></div>
+
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
-              <option value="all">All Roles</option>
-              <option value="product_owner">Product Owner</option>
-              <option value="scrum_master">Scrum Master</option>
-              <option value="release_train_engineer">RTE</option>
-              <option value="product_manager">Product Manager</option>
-              <option value="team_member">Team Member</option>
-            </select>
+              <Filter size={16} />
+              <span>Filters</span>
+            </button>
           </div>
 
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={showCompleted}
-              onChange={(e) => setShowCompleted(e.target.checked)}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-sm text-gray-700">Show completed</span>
-          </label>
+          {showFilters && (
+            <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700">Ceremony:</span>
+                <select
+                  value={ceremonyFilter}
+                  onChange={(e) => setCeremonyFilter(e.target.value as any)}
+                  className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">All Ceremonies</option>
+                  {ceremonyTypes.map(ceremony => (
+                    <option key={ceremony.type} value={ceremony.type}>
+                      {ceremony.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700">Role:</span>
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="product_owner">Product Owner</option>
+                  <option value="scrum_master">Scrum Master</option>
+                  <option value="release_train_engineer">RTE</option>
+                  <option value="product_manager">Product Manager</option>
+                  <option value="team_member">Team Member</option>
+                </select>
+              </div>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={showCompleted}
+                  onChange={(e) => setShowCompleted(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Show completed</span>
+              </label>
+            </div>
+          )}
         </div>
       </div>
 
@@ -472,7 +465,7 @@ const SAFeCalendar: React.FC = () => {
                     prev.setMonth(prev.getMonth() - 1);
                     setCurrentDate(prev);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <ChevronLeft size={20} />
                 </button>
@@ -487,7 +480,7 @@ const SAFeCalendar: React.FC = () => {
                     next.setMonth(next.getMonth() + 1);
                     setCurrentDate(next);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -495,7 +488,7 @@ const SAFeCalendar: React.FC = () => {
 
               <button
                 onClick={() => setCurrentDate(new Date())}
-                className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Today
               </button>
@@ -671,10 +664,8 @@ const SAFeCalendar: React.FC = () => {
       )}
 
       {/* Create/Edit Event Modal */}
-      {console.log('Modal condition check:', { showCreateForm, editingEvent, shouldShow: showCreateForm || editingEvent })}
       {(showCreateForm || editingEvent) && (
         <>
-          {console.log('Rendering modal!')}
           <div
             style={{
               position: 'fixed',
@@ -691,7 +682,6 @@ const SAFeCalendar: React.FC = () => {
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
-                console.log('Background clicked - closing');
                 setShowCreateForm(false);
                 setEditingEvent(null);
                 resetForm();
@@ -719,7 +709,6 @@ const SAFeCalendar: React.FC = () => {
 
               <form onSubmit={(e) => {
                 e.preventDefault();
-                console.log('Form submitted with data:', formData);
                 if (editingEvent) {
                   updateEvent();
                 } else {
@@ -832,34 +821,17 @@ const SAFeCalendar: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      console.log('Cancel clicked');
                       setShowCreateForm(false);
                       setEditingEvent(null);
                       resetForm();
                     }}
-                    style={{
-                      padding: '12px 24px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      backgroundColor: 'white',
-                      color: '#374151',
-                      fontSize: '16px',
-                      cursor: 'pointer'
-                    }}
+                    className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    style={{
-                      padding: '12px 24px',
-                      border: 'none',
-                      borderRadius: '8px',
-                      backgroundColor: '#3b82f6',
-                      color: 'white',
-                      fontSize: '16px',
-                      cursor: 'pointer'
-                    }}
+                    className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                   >
                     {editingEvent ? 'Update Event' : 'Create Event'}
                   </button>
@@ -877,7 +849,7 @@ const SAFeCalendar: React.FC = () => {
             <span>{error}</span>
             <button
               onClick={() => setError(null)}
-              className="ml-4 text-red-500 hover:text-red-700"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ml-4"
             >
               <X size={16} />
             </button>
@@ -921,12 +893,10 @@ const MonthView: React.FC<CalendarViewProps> = ({ currentDate, events, onDateCli
   };
 
   const handleNavigate = (date: Date) => {
-    console.log('Navigate to:', date); // Debug log
     onDateClick(date);
   };
 
   const handleDrillDown = (date: Date) => {
-    console.log('Drill down on:', date);
     onDateClick(date);
   };
 
@@ -1113,19 +1083,19 @@ const EventDetailsModal: React.FC<{
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => onEdit(event)}
-                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 <Edit size={18} />
               </button>
               <button
                 onClick={() => onDelete(event.id)}
-                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 <Trash2 size={18} />
               </button>
               <button
                 onClick={onClose}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 <X size={18} />
               </button>
@@ -1222,13 +1192,9 @@ const EventFormModal: React.FC<{
   onSubmit: () => void;
   onClose: () => void;
 }> = ({ event, formData, ceremonies, onChange, onSubmit, onClose }) => {
-  console.log('EventFormModal rendering with props:', { event, formData });
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ border: '5px solid red' }}>
-        <div style={{ backgroundColor: 'lime', padding: '10px', fontSize: '20px', fontWeight: 'bold' }}>
-          DEBUG: MODAL IS VISIBLE! {event ? 'EDITING' : 'CREATING'}
-        </div>
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">
@@ -1236,7 +1202,7 @@ const EventFormModal: React.FC<{
             </h2>
             <button
               onClick={onClose}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <X size={18} />
             </button>
@@ -1330,13 +1296,13 @@ const EventFormModal: React.FC<{
           <div className="flex justify-end space-x-3 pt-4">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               Cancel
             </button>
             <button
               onClick={onSubmit}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               {event ? 'Update Event' : 'Create Event'}
             </button>
@@ -1578,7 +1544,7 @@ const TimeboxView: React.FC<CalendarViewProps & {
                 </div>
                 <button
                   onClick={() => onDateClick(timebox.startDate)}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   View Details →
                 </button>
@@ -1619,7 +1585,7 @@ const DayEventsModal: React.FC<{
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <X size={18} />
             </button>

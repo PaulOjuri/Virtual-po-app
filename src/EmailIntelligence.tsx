@@ -21,6 +21,7 @@ const EmailIntelligence: React.FC = () => {
   const [showManualEmailModal, setShowManualEmailModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [editingEmail, setEditingEmail] = useState<Email | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Manual email form state
   const [emailForm, setEmailForm] = useState({
@@ -249,10 +250,6 @@ const EmailIntelligence: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Debug Modal State */}
-    <div className="bg-yellow-100 p-2 rounded text-sm border">
-      Debug: showManualEmailModal = {showManualEmailModal.toString()}
-         </div>
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -262,14 +259,14 @@ const EmailIntelligence: React.FC = () => {
         <div className="flex space-x-3">
           <button
             onClick={() => setShowManualEmailModal(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2 transition-colors"
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
           >
             <Plus size={20} />
             <span>Add Email</span>
           </button>
           <button
             onClick={() => setActiveView('compose')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+            className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
           >
             <Send size={20} />
             <span>Compose</span>
@@ -287,7 +284,7 @@ const EmailIntelligence: React.FC = () => {
             </div>
             <button 
               onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800"
+              className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
             >
               <X size={16} />
             </button>
@@ -296,52 +293,77 @@ const EmailIntelligence: React.FC = () => {
       )}
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg p-4 border border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Emails</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.total}</p>
-            </div>
-            <Mail className="text-blue-600" size={24} />
+      <div className="flex gap-4 w-full">
+        <button 
+          onClick={() => {
+            setActiveView('inbox');
+            setFilterStatus('all');
+            document.getElementById('email-list')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 flex-1"
+        >
+          <div className="flex flex-col items-center justify-center text-center w-full">
+            <Mail className="text-emerald-600 mb-1" size={18} />
+            <p className="text-sm text-gray-600 leading-tight">Total</p>
+            <p className="text-base font-bold text-gray-900">{analytics.total}</p>
           </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Unread</p>
-              <p className="text-2xl font-bold text-blue-600">{analytics.unread}</p>
-            </div>
-            <MessageSquare className="text-blue-600" size={24} />
+        </button>
+        <button 
+          onClick={() => {
+            setActiveView('inbox');
+            setFilterStatus('unread');
+            document.getElementById('email-list')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 flex-1"
+        >
+          <div className="flex flex-col items-center justify-center text-center w-full">
+            <MessageSquare className="text-emerald-600 mb-1" size={18} />
+            <p className="text-sm text-gray-600 leading-tight">Unread</p>
+            <p className="text-base font-bold text-emerald-600">{analytics.unread}</p>
           </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">High Priority</p>
-              <p className="text-2xl font-bold text-red-600">{analytics.highPriority}</p>
-            </div>
-            <AlertCircle className="text-red-600" size={24} />
+        </button>
+        <button 
+          onClick={() => {
+            setActiveView('inbox');
+            setFilterPriority('high');
+            document.getElementById('email-list')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 flex-1"
+        >
+          <div className="flex flex-col items-center justify-center text-center w-full">
+            <AlertCircle className="text-red-600 mb-1" size={18} />
+            <p className="text-sm text-gray-600 leading-tight">High</p>
+            <p className="text-base font-bold text-red-600">{analytics.highPriority}</p>
           </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Positive</p>
-              <p className="text-2xl font-bold text-green-600">{analytics.positivesentiment}</p>
-            </div>
-            <TrendingUp className="text-green-600" size={24} />
+        </button>
+        <button 
+          onClick={() => {
+            setActiveView('inbox');
+            setFilterSentiment('positive');
+            document.getElementById('email-list')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 flex-1"
+        >
+          <div className="flex flex-col items-center justify-center text-center w-full">
+            <TrendingUp className="text-green-600 mb-1" size={18} />
+            <p className="text-sm text-gray-600 leading-tight">Positive</p>
+            <p className="text-base font-bold text-green-600">{analytics.positivesentiment}</p>
           </div>
-        </div>
-        <div className="bg-white rounded-lg p-4 border border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Negative</p>
-              <p className="text-2xl font-bold text-orange-600">{analytics.negativesentiment}</p>
-            </div>
-            <TrendingUp className="text-orange-600 rotate-180" size={24} />
+        </button>
+        <button 
+          onClick={() => {
+            setActiveView('inbox');
+            setFilterSentiment('negative');
+            document.getElementById('email-list')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 flex-1"
+        >
+          <div className="flex flex-col items-center justify-center text-center w-full">
+            <TrendingUp className="text-orange-600 rotate-180 mb-1" size={18} />
+            <p className="text-sm text-gray-600 leading-tight">Negative</p>
+            <p className="text-base font-bold text-orange-600">{analytics.negativesentiment}</p>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Navigation Tabs */}
@@ -359,7 +381,7 @@ const EmailIntelligence: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveView(tab.id as any)}
-                className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 ${
                   activeView === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -383,141 +405,200 @@ const EmailIntelligence: React.FC = () => {
         {activeView === 'inbox' && (
           <div className="p-6">
             {/* Search and Filters */}
-            <div className="flex flex-wrap items-center gap-4 mb-6">
-              <div className="flex items-center space-x-2 flex-1 min-w-0">
-                <Search size={16} className="text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search emails..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+            <div className="mb-6">
+              <div className="flex flex-wrap items-center gap-4 mb-4">
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  <Search size={16} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search emails..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+                >
+                  <Filter size={16} />
+                  <span>Filters</span>
+                </button>
               </div>
-              
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="unread">Unread</option>
-                <option value="read">Read</option>
-                <option value="replied">Replied</option>
-                <option value="archived">Archived</option>
-              </select>
 
-              <select
-                value={filterPriority}
-                onChange={(e) => setFilterPriority(e.target.value as any)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Priority</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
+              {showFilters && (
+                <div className="flex flex-wrap items-center gap-4">
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value as any)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="unread">Unread</option>
+                    <option value="read">Read</option>
+                    <option value="replied">Replied</option>
+                    <option value="archived">Archived</option>
+                  </select>
 
-              <select
-                value={filterSentiment}
-                onChange={(e) => setFilterSentiment(e.target.value as any)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Sentiment</option>
-                <option value="positive">Positive</option>
-                <option value="neutral">Neutral</option>
-                <option value="negative">Negative</option>
-              </select>
+                  <select
+                    value={filterPriority}
+                    onChange={(e) => setFilterPriority(e.target.value as any)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Priority</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
 
-              <button
-                onClick={loadEmails}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
-              >
-                Refresh
-              </button>
+                  <select
+                    value={filterSentiment}
+                    onChange={(e) => setFilterSentiment(e.target.value as any)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Sentiment</option>
+                    <option value="positive">Positive</option>
+                    <option value="neutral">Neutral</option>
+                    <option value="negative">Negative</option>
+                  </select>
+
+                  <button
+                    onClick={loadEmails}
+                    className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+                  >
+                    Refresh
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Emails List */}
-            <div className="space-y-3">
+            <div id="email-list" className="space-y-3">
               {filteredEmails.map(email => (
-                <div key={email.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                            {email.from_name ? email.from_name.charAt(0).toUpperCase() : email.from_address.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {email.from_name || email.from_address}
-                            </p>
-                            <p className="text-sm text-gray-500">{email.from_address}</p>
-                          </div>
+                <div key={email.id} className="border border-gray-200 rounded-lg overflow-hidden hover:bg-gray-50 transition-colors">
+                  {/* Email Header */}
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                          {email.from_name ? email.from_name.charAt(0).toUpperCase() : email.from_address.charAt(0).toUpperCase()}
                         </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(email.status)}`}>
-                            {email.status}
-                          </span>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(email.priority)}`}>
-                            {email.priority}
-                          </span>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${getSentimentColor(email.sentiment)}`}>
-                            {getSentimentIcon(email.sentiment)} {email.sentiment}
-                          </span>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">{email.subject}</h3>
+                          <div className="flex items-center space-x-1 text-sm text-gray-500">
+                            <Clock size={14} />
+                            <span>{new Date(email.timestamp).toLocaleDateString()} {new Date(email.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                          </div>
                         </div>
                       </div>
-
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{email.subject}</h3>
                       
-                      {email.preview && (
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">{email.preview}</p>
-                      )}
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(email.status)}`}>
+                          {email.status}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(email.priority)}`}>
+                          {email.priority}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getSentimentColor(email.sentiment)}`}>
+                          {getSentimentIcon(email.sentiment)} {email.sentiment}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-                      <div className="flex items-center justify-between text-sm text-gray-500">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-1">
-                            <Clock size={14} />
-                            <span>{new Date(email.timestamp).toLocaleDateString()}</span>
-                          </div>
-                          {email.tags && email.tags.length > 0 && (
-                            <div className="flex items-center space-x-1">
-                              <Tag size={14} />
-                              <span>{email.tags.slice(0, 2).join(', ')}</span>
-                              {email.tags.length > 2 && <span>+{email.tags.length - 2}</span>}
-                            </div>
+                  {/* Email Details */}
+                  <div className="px-4 py-3">
+                    {/* From/To Section */}
+                    <div className="space-y-2 mb-4 text-sm">
+                      <div className="flex items-start">
+                        <span className="font-medium text-gray-700 w-12 flex-shrink-0">From:</span>
+                        <div className="flex-1">
+                          <span className="font-medium text-gray-900">
+                            {email.from_name || email.from_address}
+                          </span>
+                          {email.from_name && (
+                            <span className="text-gray-500 ml-2">&lt;{email.from_address}&gt;</span>
                           )}
                         </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleToggleStarred(email)}
-                            className={`p-1 ${email.starred ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}`}
-                          >
-                            <Star size={16} fill={email.starred ? 'currentColor' : 'none'} />
-                          </button>
-                          
-                          <select
-                            value={email.status}
-                            onChange={(e) => handleUpdateEmailStatus(email, e.target.value as Email['status'])}
-                            className="text-xs border border-gray-300 rounded px-2 py-1"
-                          >
-                            <option value="unread">Unread</option>
-                            <option value="read">Read</option>
-                            <option value="replied">Replied</option>
-                            <option value="archived">Archived</option>
-                          </select>
-                          
-                          <button
-                            onClick={() => handleDeleteEmail(email)}
-                            className="p-1 text-gray-400 hover:text-red-500"
-                            title="Delete email"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <span className="font-medium text-gray-700 w-12 flex-shrink-0">To:</span>
+                        <div className="flex-1">
+                          <span className="text-gray-900">{email.to_address}</span>
                         </div>
                       </div>
+                      
+                      {/* Placeholder for CC - ready for future implementation */}
+                      {/* <div className="flex items-start">
+                        <span className="font-medium text-gray-700 w-12 flex-shrink-0">CC:</span>
+                        <div className="flex-1">
+                          <span className="text-gray-900">cc_address_placeholder</span>
+                        </div>
+                      </div> */}
+                    </div>
+
+                    {/* Message Content */}
+                    <div className="mb-4">
+                      <div className="bg-white border border-gray-200 rounded-lg p-3">
+                        {email.preview && (
+                          <p className="text-gray-700 text-sm leading-relaxed">{email.preview}</p>
+                        )}
+                        {email.content && !email.preview && (
+                          <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">{email.content}</p>
+                        )}
+                        {!email.preview && !email.content && (
+                          <p className="text-gray-500 text-sm italic">No message content available</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Tags Section */}
+                    {email.tags && email.tags.length > 0 && (
+                      <div className="mb-4">
+                        <span className="font-medium text-gray-700 text-sm">Tags:</span>
+                        <div className="flex items-center space-x-1 mt-1">
+                          {email.tags.map((tag, index) => (
+                            <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleToggleStarred(email)}
+                          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+                        >
+                          <Star size={16} fill={email.starred ? 'currentColor' : 'none'} />
+                          <span>{email.starred ? 'Starred' : 'Star'}</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDeleteEmail(email)}
+                          className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
+                          title="Delete email"
+                        >
+                          <Trash2 size={16} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                      
+                      <select
+                        value={email.status}
+                        onChange={(e) => handleUpdateEmailStatus(email, e.target.value as Email['status'])}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="unread">Unread</option>
+                        <option value="read">Read</option>
+                        <option value="replied">Replied</option>
+                        <option value="archived">Archived</option>
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -541,7 +622,7 @@ const EmailIntelligence: React.FC = () => {
     setShowManualEmailModal(true);
     console.log('🟢 Called setShowManualEmailModal(true)');
   }}
-  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2 transition-colors"
+  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
 >
   <Plus size={20} />
   <span>Add Email</span>
@@ -577,7 +658,7 @@ const EmailIntelligence: React.FC = () => {
                     setShowManualEmailModal(false);
                     resetEmailForm();
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
                 >
                   <X size={24} />
                 </button>
@@ -725,14 +806,14 @@ const EmailIntelligence: React.FC = () => {
                   setShowManualEmailModal(false);
                   resetEmailForm();
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateManualEmail}
                 disabled={!emailForm.from_address.trim() || !emailForm.subject.trim()}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-green-100 border border-green-200 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {editingEmail ? 'Update Email' : 'Add Email'}
               </button>
