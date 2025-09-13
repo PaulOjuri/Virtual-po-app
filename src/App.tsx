@@ -26,18 +26,25 @@ const App: React.FC = () => {
 
   // Chat message sending functionality
   const sendMessage = () => {
-    if (!chatInput.trim()) return;
+    console.log('sendMessage called, chatInput:', chatInput);
+    if (!chatInput.trim()) {
+      console.log('Empty input, returning');
+      return;
+    }
     
     const userMessage = { text: chatInput.trim(), isUser: true };
     const botResponse = { text: "Thanks for your message! This is a demo response from the AI Assistant.", isUser: false };
     
+    console.log('Adding messages:', userMessage, botResponse);
     setMessages(prev => [...prev, userMessage, botResponse]);
     setChatInput('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    console.log('Key pressed:', e.key, 'shiftKey:', e.shiftKey);
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      console.log('Enter pressed, calling sendMessage');
       sendMessage();
     }
   };
@@ -293,7 +300,11 @@ const App: React.FC = () => {
                   }}
                 />
                 <button 
-                  onClick={sendMessage}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    console.log('Send button clicked, chatInput:', chatInput);
+                    sendMessage();
+                  }}
                   disabled={!chatInput.trim()}
                   className={`absolute right-2 top-2 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                     chatInput.trim() 
