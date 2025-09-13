@@ -348,7 +348,17 @@ export class KnowledgeBaseService {
 
     if (uploadError) {
       console.error('Error uploading file:', uploadError);
-      throw new Error('Failed to upload file');
+      
+      // Provide specific error messages
+      if (uploadError.message?.includes('Bucket not found')) {
+        throw new Error('Storage bucket "knowledge-base" not found. Please contact your administrator to set up the storage bucket in Supabase.');
+      } else if (uploadError.message?.includes('row-level security')) {
+        throw new Error('Permission denied. Please ensure you are properly authenticated.');
+      } else if (uploadError.message?.includes('File size')) {
+        throw new Error('File is too large. Maximum file size is 10MB.');
+      } else {
+        throw new Error(`Upload failed: ${uploadError.message || 'Unknown error'}`);
+      }
     }
 
     // Get public URL
@@ -388,17 +398,66 @@ export class KnowledgeBaseService {
   }
 
   private static async extractTextContent(file: File, fileType: string): Promise<string | undefined> {
-    // For now, only extract from text files
-    // In the future, you could add PDF.js for PDF extraction, etc.
-    if (fileType === 'txt') {
-      try {
-        const text = await file.text();
-        return text.substring(0, 10000); // Limit to first 10k chars
-      } catch (error) {
-        console.warn('Failed to extract text content:', error);
+    try {
+      switch (fileType) {
+        case 'txt':
+          const text = await file.text();
+          return text.substring(0, 50000); // Increased limit to 50k chars for better AI context
+          
+        case 'doc':
+          // For MS Word files, try to extract basic text
+          if (file.name.toLowerCase().endsWith('.docx')) {
+            // Basic text extraction attempt for DOCX files
+            const text = await this.extractDocxText(file);
+            return text?.substring(0, 50000);
+          }
+          break;
+          
+        case 'pdf':
+          // For PDF files, attempt basic text extraction
+          const pdfText = await this.extractPdfText(file);
+          return pdfText?.substring(0, 50000);
+          
+        default:
+          // For other file types, try to read as text if possible
+          if (file.type.startsWith('text/')) {
+            const fallbackText = await file.text();
+            return fallbackText.substring(0, 50000);
+          }
       }
+    } catch (error) {
+      console.warn('Failed to extract text content from', file.name, ':', error);
     }
     return undefined;
+  }
+
+  private static async extractDocxText(file: File): Promise<string | undefined> {
+    try {
+      // Basic attempt to extract text from DOCX
+      // In production, you'd want to use a library like mammoth.js
+      const text = await file.text();
+      // Extract readable text (this is a simplified approach)
+      const matches = text.match(/[\w\s.,!?;:'"()-]{10,}/g);
+      return matches ? matches.join(' ') : undefined;
+    } catch (error) {
+      console.warn('DOCX extraction failed:', error);
+      return undefined;
+    }
+  }
+
+  private static async extractPdfText(file: File): Promise<string | undefined> {
+    try {
+      // Basic attempt to extract text from PDF
+      // In production, you'd want to use PDF.js or similar
+      const arrayBuffer = await file.arrayBuffer();
+      const text = new TextDecoder().decode(arrayBuffer);
+      // Extract readable text (this is a very simplified approach)
+      const matches = text.match(/[\w\s.,!?;:'"()-]{10,}/g);
+      return matches ? matches.join(' ') : undefined;
+    } catch (error) {
+      console.warn('PDF extraction failed:', error);
+      return undefined;
+    }
   }
 
   // ==================== CHAT OPERATIONS ====================
