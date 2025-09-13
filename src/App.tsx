@@ -20,6 +20,27 @@ import { MockProviders } from './contexts/MockProviders';
 const App: React.FC = () => {
   const [appMode, setAppMode] = useState<'app' | 'chat'>('app');
   const [activeTab, setActiveTab] = useState('dashboard');
+  // Chat functionality state
+  const [messages, setMessages] = useState<Array<{text: string, isUser: boolean}>>([]);
+  const [chatInput, setChatInput] = useState('');
+
+  // Chat message sending functionality
+  const sendMessage = () => {
+    if (!chatInput.trim()) return;
+    
+    const userMessage = { text: chatInput.trim(), isUser: true };
+    const botResponse = { text: "Thanks for your message! This is a demo response from the AI Assistant.", isUser: false };
+    
+    setMessages(prev => [...prev, userMessage, botResponse]);
+    setChatInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
   
   
   const navItems = [
@@ -203,60 +224,55 @@ const App: React.FC = () => {
         <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Welcome Message */}
-            <div className="flex items-start space-x-3">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <Brain className="w-5 h-5 text-purple-600" />
-              </div>
-              <div className="bg-white rounded-lg p-4 max-w-2xl shadow-sm border border-gray-200">
-                <p className="text-gray-900 mb-2">
-                  Hello! I'm your AI Assistant for the Virtual Product Owner platform. I can help you with:
-                </p>
-                <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                  <li>• Analyzing your product roadmap and priorities</li>
-                  <li>• Generating insights from stakeholder feedback</li>
-                  <li>• Optimizing meeting schedules and agendas</li>
-                  <li>• Creating market intelligence reports</li>
-                  <li>• Managing your daily planning and tasks</li>
-                  <li>• Answering questions about your product data</li>
-                </ul>
-                <p className="text-gray-600 text-sm mt-3">
-                  What would you like to discuss today?
-                </p>
-              </div>
-            </div>
-
-            {/* Sample conversation for demo */}
-            <div className="flex items-start space-x-3 justify-end">
-              <div className="bg-blue-500 rounded-lg p-4 max-w-2xl text-white shadow-sm">
-                <p>Can you help me analyze the current sprint progress and identify any bottlenecks?</p>
-              </div>
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-3">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <Brain className="w-5 h-5 text-purple-600" />
-              </div>
-              <div className="bg-white rounded-lg p-4 max-w-2xl shadow-sm border border-gray-200">
-                <p className="text-gray-900 mb-3">
-                  Based on your current sprint data, I've identified several key insights:
-                </p>
-                <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                  <h4 className="font-medium text-gray-900 mb-2">Sprint Progress Summary</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• 12 of 18 story points completed (67%)</li>
-                    <li>• 3 tasks are blocked awaiting stakeholder input</li>
-                    <li>• 2 high-priority items are at risk of missing deadline</li>
-                  </ul>
+            {messages.length === 0 ? (
+              /* Welcome Message */
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-purple-600" />
                 </div>
-                <p className="text-gray-700 text-sm">
-                  I recommend scheduling a quick stakeholder sync to unblock the waiting items and reviewing the capacity allocation for the high-priority tasks.
-                </p>
+                <div className="bg-white rounded-lg p-4 max-w-2xl shadow-sm border border-gray-200">
+                  <p className="text-gray-900 mb-2">
+                    Hello! I'm your AI Assistant for the Virtual Product Owner platform. I can help you with:
+                  </p>
+                  <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                    <li>• Analyzing your product roadmap and priorities</li>
+                    <li>• Generating insights from stakeholder feedback</li>
+                    <li>• Optimizing meeting schedules and agendas</li>
+                    <li>• Creating market intelligence reports</li>
+                    <li>• Managing your daily planning and tasks</li>
+                    <li>• Answering questions about your product data</li>
+                  </ul>
+                  <p className="text-gray-600 text-sm mt-3">
+                    What would you like to discuss today?
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              /* Dynamic Messages */
+              messages.map((message, index) => (
+                <div key={index} className={`flex items-start space-x-3 ${message.isUser ? 'justify-end' : ''}`}>
+                  {!message.isUser && (
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <Brain className="w-5 h-5 text-purple-600" />
+                    </div>
+                  )}
+                  <div className={`rounded-lg p-4 max-w-2xl shadow-sm ${
+                    message.isUser 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-white border border-gray-200'
+                  }`}>
+                    <p className={message.isUser ? 'text-white' : 'text-gray-900'}>
+                      {message.text}
+                    </p>
+                  </div>
+                  {message.isUser && (
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-blue-600" />
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
 
           {/* Input Area */}
@@ -267,13 +283,24 @@ const App: React.FC = () => {
                   placeholder="Type your message here... (Press Shift+Enter for new line)"
                   className="w-full resize-none border border-gray-300 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   rows={1}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   onInput={(e) => {
                     const target = e.target as HTMLTextAreaElement;
                     target.style.height = 'auto';
                     target.style.height = Math.min(target.scrollHeight, 120) + 'px';
                   }}
                 />
-                <button className="absolute right-2 top-2 w-8 h-8 bg-purple-600 hover:bg-purple-700 rounded-lg flex items-center justify-center text-white transition-colors">
+                <button 
+                  onClick={sendMessage}
+                  disabled={!chatInput.trim()}
+                  className={`absolute right-2 top-2 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                    chatInput.trim() 
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer' 
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
                   <span className="text-sm">→</span>
                 </button>
               </div>
